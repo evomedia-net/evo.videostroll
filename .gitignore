@@ -1,0 +1,48 @@
+# Node / TypeScript
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Python (only if a Python provider or tool lands here)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Recording output - every walkthrough is regenerable from its storyboard, and
+# a single run is tens of MB. Never commit renders.
+output/
+recordings/
+*.webm
+*.mp4
+*.mkv
+*.wav
+*.mp3
+frames/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# TTS caches (Piper voices are ~60 MB each; edge-tts writes nothing but keep the seam)
+.tts-cache/
+voices/
+
+# Secrets and browser auth state - storage state files hold session cookies
+.env
+.env.*
+!.env.example
+*.storage-state.json
+auth/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+.nyc_output/

@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "title": "A 30-second tour of example.com",
+  "url": "https://example.com/",
+  "goal": "Show that a walkthrough can introduce a page, point at a link, follow it, and come back - the smallest storyboard that exercises every kind of step.",
+  "audience": "Someone evaluating evo.videostroll; they know what a website is.",
+  "viewport": { "width": 1920, "height": 1080 },
+  "voice": { "provider": "silent", "wordsPerMinute": 150 },
+  "captions": "sidecar",
+  "steps": [
+    {
+      "id": "landing",
+      "chapter": "The page",
+      "narration": "This is example.com, the placeholder site the internet uses for exactly this purpose. Everything on it fits in one screen.",
+      "actions": [],
+      "minDurationMs": 3000
+    },
+    {
+      "id": "heading",
+      "narration": "The heading is the only thing on the page that is not a paragraph or a link.",
+      "actions": [
+        { "type": "move", "target": { "selector": "role=heading[name=\"Example Domain\"]" } },
+        { "type": "highlight", "target": { "selector": "role=heading[name=\"Example Domain\"]" } }
+      ]
+    },
+    {
+      "id": "the-link",
+      "chapter": "Following the link",
+      "narration": "There is one link, and it leads to the documentation for why this domain exists.",
+      "actions": [
+        { "type": "move", "target": { "selector": "role=link[name=\"More information...\"]" } },
+        { "type": "hover", "target": { "selector": "role=link[name=\"More information...\"]" }, "holdMs": 800 }
+      ]
+    },
+    {
+      "id": "follow",
+      "narration": "Clicking it opens the IANA page that reserves these names.",
+      "actions": [
+        { "type": "click", "target": { "selector": "role=link[name=\"More information...\"]" } },
+        { "type": "waitFor", "target": { "selector": "role=heading" }, "state": "visible" }
+      ]
+    },
+    {
+      "id": "scroll",
+      "narration": "The page is longer than the first screen, so the cursor scrolls, and the recording follows it down.",
+      "actions": [
+        { "type": "scroll", "deltaY": 600, "durationMs": 1200 }
+      ]
+    },
+    {
+      "id": "back",
+      "chapter": "Back where we started",
+      "narration": "And back to the start. That is the whole tour.",
+      "actions": [
+        { "type": "goto", "url": "https://example.com/" },
+        { "type": "move", "target": { "point": { "x": 960, "y": 540 } } }
+      ],
+      "minDurationMs": 2500
+    }
+  ]
+}

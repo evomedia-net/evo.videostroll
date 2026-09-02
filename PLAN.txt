@@ -1,0 +1,381 @@
+evo.videostroll — plan
+======================
+
+Filed: 2026-09-02 · Status: planning, nothing runs yet · Stage: alpha v0.0.0.1.0
+
+An MCP server plus a Claude Code skill that let an AI agent record a narrated
+walkthrough video of a website: the agent drives the browser, a visible cursor
+moves where it points, the agent's words are spoken over the recording, and
+captions with timestamps come out alongside the video.
+
+Everything below is a proposal. The decisions that need Kelly are collected in
+§ Questions at the end, in the order they block work.
+
+---
+
+1. The problem this solves
+--------------------------
+
+Showing a site is better than describing it, and a walkthrough video is the
+form people actually watch. Making one by hand means scripting, screen
+recording, voicing, cutting, and captioning — an afternoon per video, redone
+every time the site changes. The agent already knows how to explore a site and
+explain what it sees; what it lacks is a way to show that exploration.
+
+So: give the agent a recorder it can drive step by step, that turns "here is
+what I'm doing and why" into a finished, captioned, narrated video — and make
+the timestamps first-class data, so the same run can feed a chapter list, a
+docs page, or another tool without re-watching.
+
+2. Deliverables
+---------------
+
+| Piece | Lives in | Role |
+| --- | --- | --- |
+| MCP server | server/ | The engine. Browser, cursor overlay, recording, narration, captions, assembly. Any MCP client can use it. |
+| Skill | skill/ | The method. Teaches the agent to reconnoitre, storyboard, narrate well, pace to the voice, and verify. Calls the server's tools. |
+| Storyboard schema | server/schema/ | The contract between them. A walkthrough is a storyboard; the video is a rendering of it. |
+
+Both ship from this repo. The server is the reusable part; the skill is what
+makes the output good rather than merely possible. "MCP and/or skill" resolves
+to both — see § 3 for why neither is enough alone.
+
+3. How a walkthrough is produced
+--------------------------------
+
+The unit of work is a step: one piece of narration and the browser actions
+that go with it.
+
+    storyboard (agent writes it)          server (executes it)                    output
+    ──────────────────────────            ────────────────────────────            ──────────────
+    step 1: "This is the home page.       ┌ synthesise narration → audio, D ms   frames 0..D
+             The top bar links to…"       │ mark t₀                              audio clip 1
+            move → #nav, hover            │ animate cursor + actions             caption cue 1
+                                          │ hold until max(action, D) elapsed
+                                          └ mark t₁, store {t₀, t₁, text, url}
+    step 2: …                             (repeat)
+                                          assemble: video ⨝ audio, cues → srt/vtt
+
+Per step, in order:
+
+1. Synthesise the narration first. That yields the audio clip *and its
+   duration D*. Knowing D before acting is what makes pacing deterministic.
+2. Mark the step's start on the recording timeline.
+3. Perform the actions with the animated cursor (§ 5).
+4. If the actions finished before the voice would, hold — the page sits
+   still while the sentence completes. The step lasts max(actions, D) plus a
+   short tail.
+5. Mark the end. Record {start, end, narration, actions, url, thumbnail}.
+
+The agent's thinking time between steps never reaches the video: recording is
+per step, not continuous (§ 4). That is what makes the interactive mode viable
+— the agent can look at the page, decide, and call the next step without the
+pause showing.
+
+Two ways to drive it, same engine:
+
+- Interactive — the agent calls step repeatedly, reading the page state
+  returned by each call to decide the next. This is the "agentic" mode: the
+  agent explores and narrates as it goes.
+- Batch — the agent (or a person) writes the whole storyboard as JSON and
+  calls render. Reproducible; the storyboard is the artefact.
+
+Interactive runs also emit a storyboard at the end, so every video is
+re-renderable in batch. The skill uses interactive to explore and batch to
+re-cut.
+
+4. Recording — the decision that shapes everything
+--------------------------------------------------
+
+Two workable strategies. Recommendation first.
+
+Recommended: CDP screencast, per step
+-------------------------------------
+
+Chromium's DevTools protocol (Page.startScreencast) pushes frames as the page
+changes, each with its own timestamp. Start it at step start, stop at step
+end, encode the frames into a segment, concatenate segments at the end.
+
+- Timestamps are exact — the frame carries them. Captions cannot drift.
+- Recording naturally pauses between steps. No cutting, no gap-removal
+  heuristics, no risk of an animation running in the gap and producing a jump.
+- The cursor overlay (§ 5) is in the DOM, so it is in the frames.
+- Chromium only. Playwright drives it; Firefox/WebKit are out. For
+  recording a walkthrough that is no loss.
+
+Simpler fallback: Playwright recordVideo
+----------------------------------------
+
+One continuous WebM per browser context, timestamps taken from the wall clock
+and cut into segments afterwards.
+
+- Less code; works on every Playwright browser.
+- Start-of-video is only known to ~100–200 ms, so every caption inherits that
+  offset. Fine for humans, not for "timestamps as data".
+- Idle gaps must be cut out by wall-clock intervals; anything animating on the
+  page during a gap produces a visible jump at the cut.
+
+Recommendation: CDP screencast. Timestamps are half the point of this tool,
+and a strategy that starts with them approximate is the wrong foundation. The
+fallback is documented so the choice is reversible if the screencast proves
+troublesome on Windows.
+
+Encoding
+--------
+
+Frames (JPEG from the screencast) → per-step MP4 via ffmpeg, using a concat
+list with per-frame durations so variable frame timing becomes a constant
+30 fps track. Steps → one MP4 via the concat demuxer. Audio (§ 6) is built as a
+parallel timeline and muxed at the end. Defaults: 1920×1080, 30 fps, H.264 +
+AAC. ffmpeg comes from ffmpeg-static so nothing needs installing by hand.
+
+5. The cursor
+-------------
+
+Headless browsers render no cursor, so the recording would show clicks
+happening from nowhere. The fix is an overlay injected into every page
+(addInitScript, so it survives navigation): a fixed-position SVG arrow at
+maximum z-index with pointer-events: none, which follows mousemove. Because
+it is DOM, every recording strategy captures it.
+
+Control, not just display:
+
+- Glide, don't teleport. mouse.move(x, y, { steps }) with ease-in-out over
+  ~600–900 ms, distance-scaled. A cursor that jumps reads as a glitch.
+- Settle, then click. A short pause on the target before mousedown, and a
+  click ripple drawn by the overlay so the click is visible.
+- Highlight the target (optional per action): a soft outline on the element
+  for the duration of the step, for "look here" moments.
+- Type like a person. 40–80 ms per character with slight jitter, so form
+  fills are followable.
+- Scroll smoothly, in the step's own time.
+
+Every action is expressed in the storyboard by selector (role=, text=,
+CSS) and resolved to coordinates at run time, so storyboards survive layout
+changes. Raw coordinates are allowed but discouraged.
+
+6. Narration and voice
+----------------------
+
+Providers are pluggable behind one interface:
+synthesise(text, voice) → { audioPath, durationMs, wordBoundaries? }.
+
+| Provider | Cost | Quality | Needs | Notes |
+| --- | --- | --- | --- | --- |
+| edge (Microsoft Edge neural voices) | free | high | network, no key | Word-boundary events → caption timing per word. Unofficial endpoint. |
+| piper | free | good | one ~60 MB voice model, offline | Fully local. First run downloads the voice. |
+| openai, elevenlabs | paid | high | API key | Optional. Never the default in an open-source tool. |
+| silent | — | — | nothing | Emits silence sized by words-per-minute. For tests and CI, so the suite is deterministic and offline. |
+
+Recommended default: edge, with piper as the offline choice. Kelly's
+standing preference is third-party only when necessary; edge needs no
+account and no key, which is the line that matters. Confirming in § Questions.
+
+Narration is written by the agent, in the agent's voice. Style rules live in
+the skill, not the server: the server speaks what it is given.
+
+7. Captions and timestamps
+--------------------------
+
+- walkthrough.srt and .vtt — one cue per sentence. Cue times come
+  from the step's start plus the provider's word boundaries where available,
+  else proportional by word count within the clip. Lines wrap at ~42 characters,
+  two lines per cue, per broadcast convention.
+- walkthrough.json — the manifest. For every step: index, startMs,
+  endMs, narration, actions as executed, URL, page title, a thumbnail path.
+  Plus totals, the voice used, the viewport, and the storyboard hash.
+  This is the "feed it to another app" surface: chapters, a docs page, an index,
+  whatever — without parsing SRT.
+- Burned-in captions are an option at render time
+  (captions: "burn" | "sidecar" | "both"), via ffmpeg's subtitles filter. Default is sidecar +
+  manifest; burn-in is for platforms that strip sidecars.
+- MP4 chapter markers from step boundaries, so a player's chapter list
+  matches the manifest for free.
+
+8. MCP tool surface
+-------------------
+
+Names are provisional; the shapes are the point.
+
+    videostroll_start   { url, viewport?, voice?, outputDir?, storageState? }
+                        → { sessionId, page: { url, title, snapshot } }
+
+    videostroll_step    { sessionId, narration, actions: Action[], minDurationMs? }
+                        → { index, startMs, endMs, page: {...}, thumbnail }
+
+    videostroll_observe { sessionId }                     # look without recording
+                        → { page: { url, title, snapshot }, screenshot }
+
+    videostroll_finish  { sessionId, title?, captions? }
+                        → { mp4, srt, vtt, manifest, storyboard, durationMs }
+
+    videostroll_abort   { sessionId }
+
+    videostroll_render  { storyboard }                    # batch: the whole thing
+                        → same as finish
+
+snapshot is an accessibility-tree summary (roles, names, refs) — enough for
+the agent to choose selectors without a screenshot round trip. storageState
+is a path to a Playwright storage-state file for authenticated sites;
+the storyboard never carries credentials, and the schema rejects fields that
+look like them.
+
+Action is the union in the schema: goto, move, hover, click, type,
+press, scroll, highlight, wait, waitFor.
+
+9. The skill
+------------
+
+skill/SKILL.md — a draft is in the repo. It teaches:
+
+1. Reconnoitre first. observe before deciding anything. Never narrate a
+   page you have not read.
+2. Storyboard before recording. A goal, an audience, and steps. Each step:
+   one idea, ≤ 2 sentences, an action that shows the idea.
+3. Narration style. Present tense, plain words, say what the viewer is
+   looking at before saying why it matters. No "as you can see". No secrets,
+   ever — the skill lists what counts.
+4. Pacing. A step under 2.5 s feels like a cut; over 15 s loses people.
+   Let the voice set the length; the action fits inside it.
+5. Verify. Read the manifest back. Spot-check three thumbnails. If a step's
+   page title is not what the narration claims, the step is wrong — re-record
+   it, do not re-word it.
+6. Deliver the folder, and the storyboard, so the next run is a re-cut and
+   not a redo.
+
+10. Repository layout
+---------------------
+
+    evo.videostroll/
+    ├── server/                 MCP server (engine)
+    │   ├── src/                cursor overlay, recorder, tts providers, assembler, mcp
+    │   ├── schema/             storyboard.schema.json  ← already written
+    │   └── test/               fixture site + tests (silent provider)
+    ├── skill/                  SKILL.md (+ .txt)       ← draft written
+    ├── examples/storyboards/   example-com.json        ← written
+    ├── docs/                   user docs, once there is a user surface
+    ├── releases/               versioned zips + checksums (fleet rule)
+    ├── build-version.json      v0.0.0.1.0
+    ├── PLAN.md / PLAN.txt      this
+    └── README.md / README.txt
+
+11. Stack (proposed — nothing installed yet)
+--------------------------------------------
+
+TypeScript / Node. The MCP ecosystem's centre of gravity is Node
+(npx-installable servers), Playwright's Node API is first-class, and the
+result is one package a user can run with npx @evomedia/videostroll.
+
+| Need | Proposed | Why |
+| --- | --- | --- |
+| MCP | @modelcontextprotocol/sdk | the reference SDK |
+| Browser | playwright (Chromium) | CDP access, screencast, storage state |
+| Encoding | ffmpeg-static | no system install; pinned binary |
+| TTS default | msedge-tts | Edge neural voices, word boundaries, no key |
+| TTS offline | piper via child process | optional |
+| Tests | vitest | fleet standard for Node repos |
+
+Python was considered — the fleet has more Python than Node, and edge-tts's
+reference implementation is Python — but an MCP server people install from a
+registry wants to be npx-able. Confirming in § Questions.
+
+12. Testing
+-----------
+
+- A fixture site under server/test/fixture/ (static HTML, a nav, a form,
+  a long page to scroll) served locally during tests. No network.
+- silent provider in all tests: deterministic durations from word count.
+- Assertions that matter:
+  - manifest timestamps are monotonic and endMs − startMs ≥ narration duration
+  - SRT/VTT parse, cue count = sentence count, cues lie inside their step
+  - rendered MP4 duration ≈ Σ step durations (± one frame)
+  - the cursor overlay is present in a mid-step frame (pixel check on a
+    known-colour arrow)
+  - a storyboard with a password-like field is rejected by the schema
+- Coverage measured on all files (fleet rule), thresholds set once there is a
+  baseline.
+
+13. Fleet integration
+---------------------
+
+- Versioning: build-version.json string form (zbump-compatible), alpha
+  v0.0.0.1.x, annotated tag per release, zip in releases/.
+- Dashboard: row added in versions/ the same session the repo was
+  created.
+- Twins: every .md has a .txt, generated with the reference renderer
+  (evo.locate/scripts/readme_txt.py); a sync test once there is a suite.
+- Headers: source files carry the fleet header (project, URL, author,
+  MIT). No local machine paths in anything committed.
+- CI: tests workflow on push/PR once there is code; the no-skip gate
+  from evo.locate.
+- Publishing: repo created private. Going public is a flip once M2
+  lands — see § Questions.
+
+14. Milestones
+--------------
+
+| | Milestone | Done when |
+| --- | --- | --- |
+| M0 | Scaffold | this plan, schema, example, skill draft, repo, tag, dashboard row ✅ |
+| M1 | Record | start / step / finish with the cursor overlay and the silent provider produce a captioned MP4 from the fixture site, under test |
+| M2 | Speak | edge and piper providers; word-boundary captions; burn-in option; the first real walkthrough of www |
+| M3 | Direct | the skill, exercised end to end interactively; batch render; examples |
+| M4 | Ship | docs, npx install path, releases zip, public repo, announcement |
+
+M1 is the risk retirement: cursor-in-frame and exact timestamps are the two
+things that could send us back to the fallback strategy, and both are proven
+there before any voice work.
+
+15. Risks and constraints
+-------------------------
+
+- Windows first. Everything must work on the machine that will run it.
+  Screencast + ffmpeg concat need proving on Windows before M1 closes.
+- Other people's sites. The tool records whatever is on screen. The skill
+  refuses secrets; it cannot judge terms of service. README says so plainly.
+- Unofficial TTS endpoint. edge voices are not a published API. piper
+  exists so the tool never depends on them.
+- Timing drift is the failure mode of the fallback strategy, not the
+  recommended one. Choosing CDP screencast is choosing to not have this risk.
+- Long walkthroughs — frame buffers grow. Frames are written to disk per
+  step and encoded per step, so memory is bounded by one step.
+- Fonts / rendering differ headless vs headed. Record at a fixed viewport
+  with the device scale factor pinned; document it.
+
+16. Decisions taken without you
+-------------------------------
+
+Made so the scaffold could exist; every one is reversible in one command.
+
+- Folder evo.videostroll alongside evo.locate / evo.magma; repo
+  evomedia-net/evo.videostroll, private for now.
+- Stage alpha, v0.0.0.1.0, build-version.json in string form.
+- MIT licence, matching the fleet's public repos.
+- TypeScript recommended, nothing installed — the stack is a question.
+- CDP screencast recommended over recordVideo — a question, with the
+  fallback documented.
+
+17. Questions — in the order they block work
+--------------------------------------------
+
+1. Stack: TypeScript/Node (recommended, npx-installable) or Python
+   (more of the fleet, reference edge-tts)? Blocks M1.
+2. Recording: CDP screencast (exact timestamps, Chromium-only) or
+   Playwright recordVideo (simpler, ~100 ms uncertainty)? Blocks M1.
+3. Default voice provider: edge (free, network, unofficial) as default
+   with piper offline — or piper as default? Any voice you want it to
+   sound like? Blocks M2.
+4. Output defaults: 1920×1080 @ 30 fps, H.264/AAC, sidecar captions +
+   manifest, burn-in off? Blocks M1 only if you want something else.
+5. Narration voice (style): first person ("I'll open the projects page")
+   or presenter ("The projects page shows…")? This becomes the skill's rule.
+6. Repo visibility: created private. Flip to public at M2, at M4, or now?
+7. Package name: @evomedia/videostroll on npm — is that the scope you
+   want, and is "videostroll" the final name?
+8. Authenticated sites: storage-state files, kept out of the repo — fine?
+   Or should v1 be public pages only?
+9. Skill install: live in this repo and be copied to ~/.claude/skills,
+   or published as a plugin? (The hook repo-state work set the precedent of
+   "edit in the repo, copy out".)
+10. Fleet dashboard note: anything you want recorded in the row beyond
+    "planning, private"?

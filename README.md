@@ -1,6 +1,6 @@
 # evo.videostroll
 
-`v0.0.0.1.0` (alpha) · **M1: records** · MIT
+`v0.0.0.1.1` (alpha) · **M2: speaks** · MIT
 
 An open-source MCP server and Claude Code skill that lets an AI agent
 **record narrated walkthrough videos of a website** — driving the browser itself,
@@ -21,16 +21,36 @@ One walkthrough produces, in one output folder:
 
 ## Status
 
-**M1 — it records.** `start` → `step` → `finish` produces a captioned MP4 from
-a real browser: CDP screencast per step, the cursor overlay in every frame,
-narration paced by the `silent` provider, SRT/VTT and the manifest alongside.
-Proven under test, not by inspection — see `server/test/record.test.ts`.
+**M2 — it speaks.** `start` → `step` → `finish` produces a narrated,
+captioned MP4 from a real browser: CDP screencast per step, the cursor overlay
+in every frame, a real voice, captions timed from the engine's word
+boundaries, SRT/VTT and the manifest alongside. The first real walkthrough —
+seven steps across www.evomedia.net, sixty-two seconds — rendered in 94 s of
+wall time with every caption engine-timed.
 
-Not yet: a voice. Every narration is silence of the right length until M2
-brings the `edge` and `piper` providers. The design, decisions and remaining
-questions are in **[PLAN.md](PLAN.md)**; the contract is
-[`server/schema/storyboard.schema.json`](server/schema/storyboard.schema.json),
-with a worked example in [`examples/storyboards/`](examples/storyboards/).
+The design, decisions and remaining questions are in **[PLAN.md](PLAN.md)**;
+the contract is [`server/schema/storyboard.schema.json`](server/schema/storyboard.schema.json),
+with worked examples in [`examples/storyboards/`](examples/storyboards/).
+
+## Voices
+
+| `voice.provider` | Cost | Needs | Word timing | Notes |
+| --- | --- | --- | --- | --- |
+| `edge` (default) | free | network, no key | yes | Microsoft Edge's neural voices via an unofficial endpoint. `voice.name` picks the voice, e.g. `en-US-GuyNeural`. |
+| `piper` | free | the `piper` binary + one `.onnx` voice model, offline | no | Set `PIPER_PATH` (or have `piper` on `PATH`) and `PIPER_MODEL`, or pass the model path as `voice.name`. |
+| `silent` | — | nothing | synthetic | Silence sized by words-per-minute. Deterministic; what the test suite uses. |
+
+**No provider falls back to another on its own.** A silent video where a voice
+was asked for is a wrong-looking success, so a failed voice fails the step
+with a message naming the alternatives. Check the Edge endpoint still answers
+before trusting a release: `npm run check:edge`.
+
+## Batch render from the command line
+
+```bash
+cd server
+npm run render -- ../examples/storyboards/www-evomedia.json ./output/www
+```
 
 ## Run it
 

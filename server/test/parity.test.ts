@@ -10,10 +10,10 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { render, Session, STEP_TAIL_MS } from "../src/session.js";
+import { startFixture, type Fixture } from "./fixture-server.js";
 
 /** Chromium warm-up on a session's first step, measured at 791 ms on a cold CI runner. */
 const RECORDER_JITTER_MS = 1500;
-import { startFixture, type Fixture } from "./fixture-server.js";
 
 let fixture: Fixture;
 beforeAll(async () => {

@@ -143,9 +143,9 @@
       ]
     },
     "looksLikeASecret": {
-      "description": "Rejected wherever free text is spoken or typed. Not a security control - an operator who wants to type a password into a storyboard can - but it stops the obvious mistake: pasting a real login into an example.",
+      "description": "Rejected wherever free text is spoken or typed. Not a security control - an operator who wants to type a password into a storyboard can - but it stops the obvious mistake: pasting a real login into an example. Case-tolerance is spelled out with character classes because JSON Schema patterns are ECMA-262 without flags: an inline (?i) validates in Python and is a syntax error in every JavaScript validator.",
       "type": "string",
-      "pattern": "(?i)(password\\s*[:=]|passwd|api[_-]?key\\s*[:=]|secret\\s*[:=]|token\\s*[:=]|bearer\\s+[a-z0-9._-]{16,}|ghp_[a-z0-9]{20,}|sk-[a-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)"
+      "pattern": "([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\\s*[:=]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]\\s*[:=]|[Ss][Ee][Cc][Rr][Ee][Tt]\\s*[:=]|[Tt][Oo][Kk][Ee][Nn]\\s*[:=]|[Bb][Ee][Aa][Rr][Ee][Rr]\\s+[A-Za-z0-9._-]{16,}|ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)"
     }
   }
 }

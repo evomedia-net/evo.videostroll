@@ -399,14 +399,17 @@ Taken earlier so the scaffold could exist; every one is reversible in one comman
 
 Answered 2026-09-02 by "go with your recommendations": 1 (TypeScript), 2
 (CDP screencast), 3 (defaults), 4 (edge default, piper offline), 5
-(presenter style). Answered 2026-09-03: 1–5 confirmed, voice name stays
-en-US-GuyNeural (the recommendation); **6 — private until Kelly has tested
-and played with it, the public flip is his call afterwards; 7 — the
-package is evo.videostroll**, unscoped, matching the fleet's naming; free on
-npm as of 2026-09-03. 8, 9, 10 — recommendations made, awaiting a yes:
-storage-state files plus a headed login helper (never credentials); copy-out
-now, a plugin at the public flip; dashboard row records the name and the
-"private until tested" state.
+(presenter style). Answered 2026-09-03:
+
+- 1–5 confirmed; the voice name stays en-US-GuyNeural (the recommendation).
+- 6 — private until Kelly has tested and played with it. The public flip
+  is his call afterwards.
+- 7 — the package is evo.videostroll, unscoped, matching the fleet's
+  naming. Free on npm as of 2026-09-03.
+- 8, 9, 10 — recommendations made, awaiting a yes: storage-state files
+  plus a headed login helper (never credentials); copy-out now, a plugin at
+  the public flip; the dashboard row records the name and the
+  "private until tested" state.
 
 1. Stack: TypeScript/Node (recommended, npx-installable) or Python
    (more of the fleet, reference edge-tts)? Blocks M1.

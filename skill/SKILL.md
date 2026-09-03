@@ -163,4 +163,4 @@ Register the server for the client you use. Claude Code, in a project's
 ```
 
 Run `npm run build` in `server/` first. Once the package is published the
-`args` become `["-y", "@evomedia/videostroll"]` under `npx`.
+`args` become `["-y", "evo.videostroll"]` under `npx`.

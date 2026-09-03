@@ -88,7 +88,7 @@ Run it
 
 Register the server with an MCP client (Claude Code, Claude Desktop, any
 other) by pointing it at node server/dist/index.js after npm run build,
-or at npx @evomedia/videostroll once published. Tools: videostroll_start,
+or at npx evo.videostroll once published. Tools: videostroll_start,
 videostroll_step, videostroll_observe, videostroll_finish,
 videostroll_abort, videostroll_render.
 

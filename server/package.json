@@ -1,5 +1,5 @@
 {
-  "name": "@evomedia/videostroll",
+  "name": "evo.videostroll",
   "version": "0.0.0-alpha.1",
   "private": true,
   "description": "Agent-driven narrated walkthrough videos of websites - MCP server. Visible cursor, spoken narration, timestamped captions.",

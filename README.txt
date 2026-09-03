@@ -1,7 +1,7 @@
 evo.videostroll
 ===============
 
-v0.0.0.1.1 (alpha) · M2: speaks · MIT
+v0.0.0.1.2 (alpha) · M3: directed · MIT
 
 An open-source MCP server and Claude Code skill that lets an AI agent
 record narrated walkthrough videos of a website — driving the browser itself,
@@ -24,12 +24,35 @@ One walkthrough produces, in one output folder:
 Status
 ------
 
-M2 — it speaks. start → step → finish produces a narrated,
-captioned MP4 from a real browser: CDP screencast per step, the cursor overlay
-in every frame, a real voice, captions timed from the engine's word
-boundaries, SRT/VTT and the manifest alongside. The first real walkthrough —
-seven steps across www.evomedia.net, sixty-two seconds — rendered in 94 s of
-wall time with every caption engine-timed.
+M3 — an agent can drive it. The MCP server is exercised end to end by a
+real stdio client: start, read the page's accessibility snapshot, choose a
+selector from what the page said, step, finish. The storyboard an
+interactive run emits re-renders in batch to the same walkthrough, so "edit
+the steps that changed and render again" is a promise the tests hold. The
+skill in skill/ is the method an agent follows; the first real walkthrough
+— seven steps across www.evomedia.net, sixty-two seconds, Edge voice — is in
+examples/storyboards/.
+
+Use it from an agent
+--------------------
+
+Build once, register the server, install the skill:
+
+    cd server && npm ci && npx playwright install chromium && npm run build
+
+Claude Code — in a project's .mcp.json (or ~/.claude.json for every project):
+
+    {
+      "mcpServers": {
+        "videostroll": { "command": "node", "args": ["C:/path/to/evo.videostroll/server/dist/index.js"] }
+      }
+    }
+
+    mkdir -p ~/.claude/skills/videostroll && cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md
+
+Then ask for a walkthrough. The skill tells the agent to reconnoitre with
+videostroll_observe, storyboard, narrate in short presenter-voice sentences,
+record step by step, and read the manifest back before delivering.
 
 The design, decisions and remaining questions are in PLAN.md (PLAN.md);
 the contract is server/schema/storyboard.schema.json (server/schema/storyboard.schema.json),
@@ -65,7 +88,7 @@ Run it
 
 Register the server with an MCP client (Claude Code, Claude Desktop, any
 other) by pointing it at node server/dist/index.js after npm run build,
-or at npx @evomedia/videostroll once published. Tools: videostroll_start,
+or at npx evo.videostroll once published. Tools: videostroll_start,
 videostroll_step, videostroll_observe, videostroll_finish,
 videostroll_abort, videostroll_render.
 

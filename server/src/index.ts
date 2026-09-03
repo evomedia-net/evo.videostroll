@@ -6,7 +6,7 @@
 /**
  * `videostroll` - the MCP server over stdio. Register it with your MCP client:
  *
- *   { "mcpServers": { "videostroll": { "command": "npx", "args": ["@evomedia/videostroll"] } } }
+ *   { "mcpServers": { "videostroll": { "command": "npx", "args": ["evo.videostroll"] } } }
  *
  * Nothing is written to stdout except the protocol; diagnostics go to stderr,
  * because stdout IS the transport.

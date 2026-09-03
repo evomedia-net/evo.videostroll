@@ -1,25 +1,41 @@
 ---
 name: videostroll
-description: Record a narrated walkthrough video of a website - the agent drives the browser, a visible cursor follows, its narration is spoken, and captions with timestamps come out alongside. Use when asked for a walkthrough, demo video, screen tour, or "show me how X works" as a video. Needs the evo.videostroll MCP server.
+description: Record a narrated walkthrough video of a website - the agent drives the browser, a visible cursor follows, its narration is spoken, and captions with timestamps come out alongside. Use when asked for a walkthrough, demo video, screen tour, or "show me how X works" as a video. Needs the evo.videostroll MCP server (tools videostroll_start, videostroll_observe, videostroll_step, videostroll_finish, videostroll_abort, videostroll_render).
 ---
 
 # videostroll — how to make a walkthrough that is worth watching
-
-> **Status: draft.** This skill describes the method the tool is being built
-> around. The tool names below match `PLAN.md` § 8 and will be corrected when
-> the server lands.
 
 You are about to produce a video someone will watch instead of reading. The
 recorder does the mechanics. Your job is the three things a recorder cannot do:
 decide what to show, say it well, and check that what you said is what was on
 screen.
 
+## The tools, in the order you use them
+
+| Tool | When | Records? |
+| --- | --- | --- |
+| `videostroll_start` | once — `{ url, title?, voice?, captions?, outputDir? }` | no |
+| `videostroll_observe` | as often as you like — `{ sessionId }` | **no** |
+| `videostroll_step` | once per storyboard step — `{ sessionId, narration, actions, id?, chapter?, minDurationMs? }` | **yes** |
+| `videostroll_finish` | once — `{ sessionId, title?, captions? }` | assembles |
+| `videostroll_abort` | if the walkthrough is wrong — `{ sessionId }` | discards |
+| `videostroll_render` | batch — `{ storyboard, outputDir? }` | the whole thing |
+
+Every tool returns JSON. `start`, `observe` and `step` return the page's
+**accessibility snapshot** — roles and names — which is how you choose
+selectors: `role=link[name="Projects"]`, `role=button[name="Save"]`, `text=…`.
+Never guess a selector the snapshot did not show you.
+
+Actions: `goto`, `move`, `hover`, `click`, `type`, `press`, `scroll`,
+`highlight`, `wait`, `waitFor`. A `narration` that looks like a credential is
+rejected at the tool boundary; that is the floor, not the ceiling.
+
 ## 0. Before anything: reconnoitre
 
-Call `videostroll_start` with the URL, then **read the page** the call returns
-before deciding a single step. Never narrate a page you have not read. If the
-walkthrough spans several pages, `videostroll_observe` your way through them
-first — observing records nothing.
+Call `videostroll_start`, then **read the snapshot** before deciding a single
+step. Never narrate a page you have not read. If the walkthrough spans several
+pages, `videostroll_observe` your way through them — observing records
+nothing, and a `goto` inside a later step will bring the recording there.
 
 Write down, for yourself, in one line each:
 
@@ -36,15 +52,18 @@ shows it. Draft all of them before recording any of them.
 
 For each step:
 
-- **Narration:** at most two sentences. One idea. Present tense.
+- **Narration:** at most two sentences. One idea. Present tense, presenter
+  voice — "The projects page lists every product", not "I'll open the
+  projects page".
 - **Action:** the thing on screen that *demonstrates* the sentence — move the
   cursor to it, hover it, click it, scroll to it, highlight it. If nothing on
   screen demonstrates the sentence, the sentence does not belong in a video.
-- **Selector, not coordinates.** `role=` and `text=` selectors survive layout
+- **Selector from the snapshot.** `role=` and `text=` selectors survive layout
   changes; pixel positions do not.
 
 Order steps the way a person would move through the site, not the way the
-code is organised.
+code is organised. Give the first step a `chapter`; give one to each change of
+subject — they become the video's chapter list.
 
 ## 2. Say it like a person, not a manual
 
@@ -55,10 +74,12 @@ code is organised.
 - **Present tense, active voice.** "The header stays put when you scroll."
 - **Short.** A sentence you would not say out loud is a sentence that will
   sound wrong when it is.
+- **Spell for the ear.** The voice reads what you write: "evo dot e h s", not
+  "evo.ehs"; "Ask A I", not "Ask AI". Captions show the spoken form too, so
+  keep it readable.
 - **Never say a secret.** No passwords, tokens, keys, internal hostnames,
   personal email addresses, or anything from an `.env`. If it is on screen,
-  scroll it off or pick a different page. The server rejects storyboard fields
-  that look like credentials; that is the floor. You are the ceiling.
+  scroll it off or pick a different page.
 
 ## 3. Pace to the voice
 
@@ -70,40 +91,76 @@ voice finishes, so the voice sets the length. Your job is to keep it humane:
 - One action per sentence, roughly. A click-then-scroll-then-type under one
   sentence is three steps wearing a coat.
 - Let the first step breathe — a plain "This is X" over the landing page,
-  cursor resting, before anything moves.
+  cursor resting, with `minDurationMs` of 3000–4000, before anything moves.
 
 ## 4. Record
 
 Interactive: call `videostroll_step` for each storyboard step, in order.
-Read the page state each call returns — if the page is not what you expected
-(a redirect, a modal, an error), **stop and fix the storyboard**; do not
-narrate around it.
+**Read the `page` each call returns** — if it is not what you expected (a
+redirect, a modal, an error page, a different title), stop and fix the
+storyboard. Do not narrate around it; `videostroll_abort` and start again is
+cheaper than a wrong video.
 
 Batch: `videostroll_render` with the whole storyboard, when the storyboard is
-already proven.
+already proven. Every interactive run also writes
+`walkthrough.storyboard.json`, so the next version is a re-cut.
 
 ## 5. Verify before you deliver
 
-`videostroll_finish` returns the manifest. Read it back.
+`videostroll_finish` returns the manifest path. Read it. The manifest is a
+JSON object with `steps[]`, `cues[]`, `chapters[]` and `durationMs`. Check:
 
-- Every step's **page title and URL** must be what the narration claims. A
-  mismatch means the step recorded the wrong thing — **re-record it**, do not
-  re-word the narration to match what happened.
-- Open **three thumbnails**: first, last, and the one you are least sure of.
-- Timestamps must be monotonic and the total must be roughly what you
-  expected. A 40-second plan that rendered to 3 minutes had a step hang.
-- Play the first ten seconds. The cursor must be visible and the voice must
-  start when the first caption does.
+- **`steps[i].title` and `steps[i].url`** are what that step's narration
+  claims. A mismatch means the step recorded the wrong thing —
+  **re-record it**, do not re-word the narration to match what happened.
+- **`steps[i].frameCount`** is above 2 for any step where something moved.
+  Exactly 2 means only the bookends captured: the page never repainted.
+- **`cues[]`** has one entry per sentence, each inside its step's
+  `[startMs, endMs]`.
+- **`durationMs`** is roughly what the storyboard implied. A 40-second plan
+  that rendered to 3 minutes had a step hang on a `waitFor`.
+- Open **three thumbnails** from `thumbs/`: first, last, and the step you are
+  least sure of.
+
+Then play the first ten seconds. The cursor must be visible and the voice must
+start when the first caption does.
 
 ## 6. Deliver
 
-Hand over the output folder **and the storyboard**. The storyboard is what
-makes the next version a re-cut instead of a redo: when the site changes,
-edit the steps that changed and `render` again.
+Hand over the output folder **and** `walkthrough.storyboard.json`. The
+storyboard is what makes the next version a re-cut instead of a redo: when the
+site changes, edit the steps that changed and `videostroll_render` again.
 
 ## What this skill will not do
 
-- Record behind a login it was not given a storage-state file for.
+- Record behind a login it was not given a `storageState` file for.
 - Guess a site's terms of service. Recording someone else's site is the
   operator's call, not the agent's.
 - Pad. If the goal is met in six steps, it is six steps.
+
+## Install
+
+The skill lives in this repo and is copied out — edit here, then copy, never
+the reverse.
+
+```bash
+mkdir -p ~/.claude/skills/videostroll
+cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md
+```
+
+Register the server for the client you use. Claude Code, in a project's
+`.mcp.json` (or `~/.claude.json` for every project):
+
+```json
+{
+  "mcpServers": {
+    "videostroll": {
+      "command": "node",
+      "args": ["C:/path/to/evo.videostroll/server/dist/index.js"]
+    }
+  }
+}
+```
+
+Run `npm run build` in `server/` first. Once the package is published the
+`args` become `["-y", "evo.videostroll"]` under `npx`.

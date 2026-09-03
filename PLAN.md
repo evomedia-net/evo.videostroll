@@ -1,6 +1,6 @@
 # evo.videostroll — plan
 
-**Filed:** 2026-09-02 · **Status:** M1 done 2026-09-02, M2 next · **Stage:** alpha `v0.0.0.1.0`
+**Filed:** 2026-09-02 · **Status:** M2 done 2026-09-03, M3 next · **Stage:** alpha `v0.0.0.1.1`
 
 An MCP server plus a Claude Code skill that let an AI agent record a narrated
 walkthrough video of a website: the agent drives the browser, a visible cursor
@@ -306,7 +306,7 @@ registry wants to be `npx`-able. **Confirming in § Questions.**
 | --- | --- | --- |
 | **M0** | Scaffold | this plan, schema, example, skill draft, repo, tag, dashboard row ✅ |
 | **M1** | Record | ✅ 2026-09-02. `start` / `step` / `finish` with the cursor overlay and the `silent` provider produce a captioned MP4 from the fixture site; 23 tests, both risks retired — the cursor is in the captured pixels (clip-compare), and the MP4's duration equals the sum of the steps within one frame |
-| **M2** | Speak | `edge` and `piper` providers; word-boundary captions; burn-in option; the first real walkthrough of www |
+| **M2** | Speak | ✅ 2026-09-03. `edge` and `piper` providers; captions aligned to the engine's word boundaries (per sentence, with per-sentence fallback); burn-in proven under test; the first real walkthrough of www — 7 steps, 62 s, every cue engine-timed, zero narration-vs-page mismatches |
 | **M3** | Direct | the skill, exercised end to end interactively; batch `render`; examples |
 | **M4** | Ship | docs, `npx` install path, releases zip, public repo, announcement |
 
@@ -348,6 +348,18 @@ an inline `(?i)`, which Python's validator accepted and every JavaScript one
 rejects as a syntax error. JSON Schema patterns are ECMA-262 without flags.
 Case-tolerance is now spelled out in character classes, and the suite checks
 the example under `ajv` and the runtime schema both.
+
+**M2 additions.** `msedge-tts` installed (the § 11 choice). Its metadata
+arrives as JSON with offsets in 100 ns ticks; the parser is pure and tested
+offline, and the live round trip is `npm run check:edge` — a script, not a
+test, so the suite never depends on an unofficial endpoint being up. Captions
+no longer require the engine's word count to equal the narration's: boundaries
+are *aligned* by normalised text ("evo.videostroll" comes back as `evo`, `.`,
+`videostroll` and still lines up), and a sentence that cannot be aligned falls
+back to proportional timing alone rather than costing the whole step. Piper is
+driven through a `PIPER_PATH` that may be a `.js` file run under Node — the
+seam the tests use for a fake, chosen over `shell: true` because Node refuses
+to spawn `.cmd` files without a shell and a shell would parse the model path.
 
 Taken earlier so the scaffold could exist; every one is reversible in one command.
 

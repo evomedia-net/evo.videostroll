@@ -7,8 +7,14 @@
  * thing: a canonical WAV (see wav.ts), its duration, and per-word timing when
  * the engine knows it. The step is paced to durationMs BEFORE any action runs,
  * which is why synthesis happens first - see session.ts.
+ *
+ * No provider falls back to another on its own. A silent video where a voice
+ * was asked for is a wrong-looking success; the error names the alternatives
+ * and the caller chooses.
  */
 import type { Voice } from "../storyboard.js";
+import { EdgeProvider } from "./edge.js";
+import { PiperProvider } from "./piper.js";
 import { SilentProvider } from "./silent.js";
 
 export interface WordBoundary {
@@ -30,17 +36,17 @@ export interface TtsProvider {
   synthesise(text: string, voice: Voice): Promise<Synthesis>;
 }
 
-const M2 = "is an M2 provider - not available in this build. Use voice.provider = 'silent'.";
-
 export function getProvider(voice: Voice): TtsProvider {
   switch (voice.provider) {
     case "silent":
       return new SilentProvider();
     case "edge":
+      return new EdgeProvider();
     case "piper":
+      return new PiperProvider();
     case "openai":
     case "elevenlabs":
-      throw new Error(`voice.provider '${voice.provider}' ${M2}`);
+      throw new Error(`voice.provider '${voice.provider}' is not implemented yet. Available: edge (default, network), piper (offline), silent.`);
   }
 }
 

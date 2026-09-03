@@ -7,8 +7,15 @@
  * provider's word boundaries when it has them, else proportionally by word
  * count across the narration's duration. Lines wrap at ~42 characters, two
  * lines per cue - the broadcast convention that keeps captions readable.
+ *
+ * Word boundaries are ALIGNED to the narration, not assumed to match it one
+ * for one. A real engine reports "co-founder" as one word or two, drops a
+ * standalone dash, and attaches or detaches punctuation as it likes; an exact
+ * count check threw all of that away and fell back to proportional timing for
+ * the whole step. Alignment keeps the exact times for every sentence it can
+ * place and falls back per sentence, not per step.
  */
-import type { Synthesis } from "./tts/index.js";
+import type { Synthesis, WordBoundary } from "./tts/index.js";
 import { words } from "./tts/index.js";
 
 export interface Cue {
@@ -20,6 +27,7 @@ export interface Cue {
 }
 
 export const MAX_LINE = 42;
+export const MIN_CUE_MS = 300;
 
 /** Split on sentence-ending punctuation. Keeps the punctuation with its sentence. */
 export function splitSentences(text: string): string[] {
@@ -51,6 +59,39 @@ export function wrapCue(text: string): string {
   return ws.slice(0, mid).join(" ") + "\n" + ws.slice(mid).join(" ");
 }
 
+/** Letters and digits only, lower-cased: "Co-founder," and "co founder" compare equal in pieces. */
+export function normalise(w: string): string {
+  return w.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
+/**
+ * Find the boundary span for a sentence, starting the search at `from`.
+ * Walks the sentence's normalised words and consumes boundaries whose
+ * normalised text is a prefix-match of what remains - so one narration word
+ * may span several boundaries ("co-founder" -> "co", "founder") or one
+ * boundary may cover several narration words. Returns null when it cannot
+ * place the sentence, so the caller falls back for that sentence only.
+ */
+export function alignSentence(sentence: string, wb: WordBoundary[], from: number): { start: number; end: number; next: number } | null {
+  const target = words(sentence).map(normalise).filter(Boolean).join("");
+  if (!target) return null;
+  let i = from;
+  // Skip boundaries that are pure punctuation.
+  while (i < wb.length && !normalise(wb[i].word)) i++;
+  if (i >= wb.length) return null;
+  const first = i;
+  let acc = "";
+  while (i < wb.length && acc.length < target.length) {
+    const piece = normalise(wb[i].word);
+    if (piece && !target.startsWith(acc + piece)) return null;
+    acc += piece;
+    i++;
+  }
+  if (acc !== target) return null;
+  const last = wb[i - 1];
+  return { start: wb[first].offsetMs, end: last.offsetMs + last.durationMs, next: i };
+}
+
 /**
  * Cues for one step. stepStartMs is the step's start on the OUTPUT timeline.
  * The narration occupies [stepStartMs, stepStartMs + synthesis.durationMs];
@@ -63,29 +104,35 @@ export function cuesForStep(narration: string, stepStartMs: number, synthesis: S
   const wb = synthesis.words;
   const cues: Cue[] = [];
   let wordCursor = 0;
+  let wbCursor = 0;
   for (let i = 0; i < sentences.length; i++) {
     const n = words(sentences[i]).length;
-    let start: number;
-    let end: number;
-    if (wb.length === total) {
-      // Exact: first word's offset to last word's end.
-      const first = wb[wordCursor];
-      const last = wb[Math.min(wordCursor + n - 1, wb.length - 1)];
-      start = first.offsetMs;
-      end = last.offsetMs + last.durationMs;
-    } else {
-      // Proportional by word count.
+    let start: number | undefined;
+    let end: number | undefined;
+    if (wb.length) {
+      const a = alignSentence(sentences[i], wb, wbCursor);
+      if (a) {
+        start = a.start;
+        end = a.end;
+        wbCursor = a.next;
+      }
+    }
+    if (start === undefined || end === undefined) {
+      // Proportional by word count - per sentence, so one unalignable
+      // sentence does not cost the others their exact timing.
       start = Math.round((wordCursor / total) * synthesis.durationMs);
       end = Math.round(((wordCursor + n) / total) * synthesis.durationMs);
     }
-    // Never zero-length, never overlapping the next cue.
-    end = Math.max(end, start + 300);
+    end = Math.max(end, start + MIN_CUE_MS);
     cues.push({ index: firstIndex + i, startMs: stepStartMs + start, endMs: stepStartMs + end, text: wrapCue(sentences[i]) });
     wordCursor += n;
   }
+  // Never overlapping, never past the narration.
   for (let i = 0; i + 1 < cues.length; i++) {
     if (cues[i].endMs > cues[i + 1].startMs) cues[i].endMs = cues[i + 1].startMs;
   }
+  const limit = stepStartMs + Math.max(synthesis.durationMs, MIN_CUE_MS);
+  for (const c of cues) if (c.endMs > limit) c.endMs = limit;
   return cues;
 }
 

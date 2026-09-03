@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "title": "evomedia.net in ninety seconds",
+  "url": "https://www.evomedia.net/",
+  "goal": "Show what the site is and where the proof lives - the projects, the fleet's public test and coverage boards, and the writing.",
+  "audience": "Someone deciding in two minutes whether to read further.",
+  "viewport": { "width": 1920, "height": 1080 },
+  "voice": { "provider": "edge", "name": "en-US-GuyNeural" },
+  "captions": "both",
+  "steps": [
+    { "id": "home", "chapter": "Home",
+      "narration": "This is evomedia dot net, Kelly Michels' portfolio. Everything on it is built, deployed and measured by the person whose name is on it.",
+      "actions": [ { "type": "move", "target": { "selector": "role=heading" } } ], "minDurationMs": 4000 },
+    { "id": "home-scroll",
+      "narration": "The front page is a summary. The real content is one click deeper, so the header stays pinned wherever you scroll.",
+      "actions": [ { "type": "scroll", "deltaY": 700, "durationMs": 1400 }, { "type": "scroll", "deltaY": -700, "durationMs": 900 } ] },
+    { "id": "projects", "chapter": "Projects",
+      "narration": "The projects page lists every product in the fleet, each with a stage label. Alpha and beta mean exactly what they say.",
+      "actions": [ { "type": "goto", "url": "https://www.evomedia.net/projects.html" }, { "type": "move", "target": { "selector": "role=heading" } }, { "type": "scroll", "deltaY": 500, "durationMs": 1200 } ] },
+    { "id": "ehs", "chapter": "evo.ehs",
+      "narration": "evo dot e h s is the largest of them: a multi-tenant permit-to-work system for industrial sites, with an Ask A I assistant grounded in each site's own data.",
+      "actions": [ { "type": "goto", "url": "https://www.evomedia.net/evo-ehs.html" }, { "type": "move", "target": { "selector": "role=heading" } }, { "type": "scroll", "deltaY": 600, "durationMs": 1400 } ] },
+    { "id": "testsuites", "chapter": "The evidence",
+      "narration": "This board is the fleet's test results, every suite, every day, published from the same run that produced them. All green means all green today.",
+      "actions": [ { "type": "goto", "url": "https://www.evomedia.net/testsuites.html" }, { "type": "move", "target": { "selector": "role=heading" } }, { "type": "scroll", "deltaY": 400, "durationMs": 1200 } ] },
+    { "id": "zscripts", "chapter": "Tooling",
+      "narration": "And the tooling that runs all of it is public too: the deploy, backup and release scripts, with their own tests and changelog.",
+      "actions": [ { "type": "goto", "url": "https://www.evomedia.net/zscripts.html" }, { "type": "move", "target": { "selector": "role=heading" } } ] },
+    { "id": "end", "chapter": "That is the tour",
+      "narration": "That is the tour. This video was recorded, narrated and captioned by an agent, using evo dot videostroll.",
+      "actions": [ { "type": "goto", "url": "https://www.evomedia.net/" }, { "type": "move", "target": { "point": { "x": 960, "y": 540 } } } ], "minDurationMs": 3500 }
+  ]
+}

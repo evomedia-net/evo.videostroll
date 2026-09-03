@@ -1,6 +1,6 @@
 # evo.videostroll — plan
 
-**Filed:** 2026-09-02 · **Status:** M2 done 2026-09-03, M3 next · **Stage:** alpha `v0.0.0.1.1`
+**Filed:** 2026-09-02 · **Status:** M3 done 2026-09-03, M4 next · **Stage:** alpha `v0.0.0.1.2`
 
 An MCP server plus a Claude Code skill that let an AI agent record a narrated
 walkthrough video of a website: the agent drives the browser, a visible cursor
@@ -307,7 +307,7 @@ registry wants to be `npx`-able. **Confirming in § Questions.**
 | **M0** | Scaffold | this plan, schema, example, skill draft, repo, tag, dashboard row ✅ |
 | **M1** | Record | ✅ 2026-09-02. `start` / `step` / `finish` with the cursor overlay and the `silent` provider produce a captioned MP4 from the fixture site; 23 tests, both risks retired — the cursor is in the captured pixels (clip-compare), and the MP4's duration equals the sum of the steps within one frame |
 | **M2** | Speak | ✅ 2026-09-03. `edge` and `piper` providers; captions aligned to the engine's word boundaries (per sentence, with per-sentence fallback); burn-in proven under test; the first real walkthrough of www — 7 steps, 62 s, every cue engine-timed, zero narration-vs-page mismatches |
-| **M3** | Direct | the skill, exercised end to end interactively; batch `render`; examples |
+| **M3** | Direct | ✅ 2026-09-03. The MCP surface driven end to end by a real stdio client — observe, choose a selector from the snapshot, step, finish, abort, and the credential guard at the tool boundary; interactive/batch parity proven (an emitted storyboard re-renders to the same step ids, chapters, cue count and durations within 600 ms); the skill finalised with a manifest-keyed verification checklist and an install path |
 | **M4** | Ship | docs, `npx` install path, releases zip, public repo, announcement |
 
 M1 is the risk retirement: cursor-in-frame and exact timestamps are the two
@@ -360,6 +360,15 @@ back to proportional timing alone rather than costing the whole step. Piper is
 driven through a `PIPER_PATH` that may be a `.js` file run under Node — the
 seam the tests use for a fake, chosen over `shell: true` because Node refuses
 to spawn `.cmd` files without a shell and a shell would parse the model path.
+
+**M3 additions.** `mcp.ts` had never been exercised before M3 — M1 and M2
+tested the engine underneath it. It now has a real client test that spawns
+`dist/index.js` over stdio, and the test's second step chooses its selector
+from the accessibility snapshot the first call returned, which is the loop the
+skill describes and the thing that makes the mode "agentic". Parity between
+interactive and batch is a test, not an intention. The skill drops "draft",
+maps every tool and argument, and tells the agent what to check in the
+manifest by field name.
 
 Taken earlier so the scaffold could exist; every one is reversible in one command.
 

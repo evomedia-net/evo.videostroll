@@ -1,0 +1,56 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: server
+
+jobs:
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          # setup-node is an action, not a run step, so defaults.run does not
+          # apply to it - the lockfile path has to be spelled out or the cache
+          # silently never hits.
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Chromium
+        # The recorder is Chromium-only by design (CDP screencast). --with-deps
+        # installs the shared libraries a bare runner lacks.
+        run: npx playwright install --with-deps chromium
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        # The suite launches a real browser and encodes real video with the
+        # pinned ffmpeg. Every provider in tests is `silent`, so nothing here
+        # needs a network, a key or a voice model - the fixture site is served
+        # from the repo.
+        run: npx vitest run
+
+      - name: Keep the artefacts of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: videostroll-test-output
+          path: |
+            /tmp/videostroll-test-*/**/*.json
+            /tmp/videostroll-test-*/**/*.srt
+          if-no-files-found: ignore

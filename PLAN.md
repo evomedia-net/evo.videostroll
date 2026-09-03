@@ -1,6 +1,6 @@
 # evo.videostroll — plan
 
-**Filed:** 2026-09-02 · **Status:** planning, nothing runs yet · **Stage:** alpha `v0.0.0.1.0`
+**Filed:** 2026-09-02 · **Status:** M1 done 2026-09-02, M2 next · **Stage:** alpha `v0.0.0.1.0`
 
 An MCP server plus a Claude Code skill that let an AI agent record a narrated
 walkthrough video of a website: the agent drives the browser, a visible cursor
@@ -305,7 +305,7 @@ registry wants to be `npx`-able. **Confirming in § Questions.**
 | | Milestone | Done when |
 | --- | --- | --- |
 | **M0** | Scaffold | this plan, schema, example, skill draft, repo, tag, dashboard row ✅ |
-| **M1** | Record | `start` / `step` / `finish` with the cursor overlay and the `silent` provider produce a captioned MP4 from the fixture site, under test |
+| **M1** | Record | ✅ 2026-09-02. `start` / `step` / `finish` with the cursor overlay and the `silent` provider produce a captioned MP4 from the fixture site; 23 tests, both risks retired — the cursor is in the captured pixels (clip-compare), and the MP4's duration equals the sum of the steps within one frame |
 | **M2** | Speak | `edge` and `piper` providers; word-boundary captions; burn-in option; the first real walkthrough of www |
 | **M3** | Direct | the skill, exercised end to end interactively; batch `render`; examples |
 | **M4** | Ship | docs, `npx` install path, releases zip, public repo, announcement |
@@ -329,9 +329,27 @@ there before any voice work.
 - **Fonts / rendering** differ headless vs headed. Record at a fixed viewport
   with the device scale factor pinned; document it.
 
-## 16. Decisions taken without you
+## 16. Decisions
 
-Made so the scaffold could exist; every one is reversible in one command.
+Kelly, 2026-09-02: *"go with your recommendations, start M1."* So the
+recommendations above are now decisions:
+
+- **TypeScript/Node**
+- **CDP screencast, per step**
+- **1920×1080 @ 30 fps, H.264/AAC, sidecar captions plus the manifest**
+- **`edge` default, `piper` offline** (M2)
+- **presenter-voice narration** in the skill Installed for M1:
+`@modelcontextprotocol/sdk`, `playwright`, `ffmpeg-static`, `zod`, and for
+tests `vitest`, `typescript`, `ajv` (+`ajv-formats`) — `ajv` is beyond § 11, it
+validates the published JSON Schema in the suite.
+
+One thing M1 found in the contract itself: the schema's secret pattern used
+an inline `(?i)`, which Python's validator accepted and every JavaScript one
+rejects as a syntax error. JSON Schema patterns are ECMA-262 without flags.
+Case-tolerance is now spelled out in character classes, and the suite checks
+the example under `ajv` and the runtime schema both.
+
+Taken earlier so the scaffold could exist; every one is reversible in one command.
 
 - Folder `evo.videostroll` alongside `evo.locate` / `evo.magma`; repo
   `evomedia-net/evo.videostroll`, **private** for now.
@@ -342,6 +360,11 @@ Made so the scaffold could exist; every one is reversible in one command.
   fallback documented.
 
 ## 17. Questions — in the order they block work
+
+**Answered 2026-09-02 by "go with your recommendations":** 1 (TypeScript), 2
+(CDP screencast), 3 (defaults), 4 (`edge` default, `piper` offline — voice
+name still open), 5 (presenter style). **Still open:** 6–10 below, plus the
+voice name in 4.
 
 1. **Stack:** TypeScript/Node (recommended, `npx`-installable) or Python
    (more of the fleet, reference `edge-tts`)? Blocks M1.

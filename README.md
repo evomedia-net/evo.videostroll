@@ -1,6 +1,6 @@
 # evo.videostroll
 
-`v0.0.0.1.0` (alpha) · **planning** · MIT
+`v0.0.0.1.0` (alpha) · **M1: records** · MIT
 
 An open-source MCP server and Claude Code skill that lets an AI agent
 **record narrated walkthrough videos of a website** — driving the browser itself,
@@ -21,10 +21,31 @@ One walkthrough produces, in one output folder:
 
 ## Status
 
-Planning. Nothing here runs yet. The design, the decisions still open, and the
-milestones are in **[PLAN.md](PLAN.md)**. The storyboard format the whole thing
-is built around is already concrete: [`server/schema/storyboard.schema.json`](server/schema/storyboard.schema.json),
+**M1 — it records.** `start` → `step` → `finish` produces a captioned MP4 from
+a real browser: CDP screencast per step, the cursor overlay in every frame,
+narration paced by the `silent` provider, SRT/VTT and the manifest alongside.
+Proven under test, not by inspection — see `server/test/record.test.ts`.
+
+Not yet: a voice. Every narration is silence of the right length until M2
+brings the `edge` and `piper` providers. The design, decisions and remaining
+questions are in **[PLAN.md](PLAN.md)**; the contract is
+[`server/schema/storyboard.schema.json`](server/schema/storyboard.schema.json),
 with a worked example in [`examples/storyboards/`](examples/storyboards/).
+
+## Run it
+
+```bash
+cd server
+npm ci
+npx playwright install chromium
+npm test
+```
+
+Register the server with an MCP client (Claude Code, Claude Desktop, any
+other) by pointing it at `node server/dist/index.js` after `npm run build`,
+or at `npx @evomedia/videostroll` once published. Tools: `videostroll_start`,
+`videostroll_step`, `videostroll_observe`, `videostroll_finish`,
+`videostroll_abort`, `videostroll_render`.
 
 ## Two deliverables, one repo
 

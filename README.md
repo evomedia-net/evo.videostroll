@@ -1,12 +1,30 @@
 # evo.videostroll
 
-`v0.0.0.1.2` (alpha) · **M3: directed** · MIT
+`v0.0.0.1.3` (alpha) · **M3: directed** · MIT
 
 An open-source MCP server and Claude Code skill that lets an AI agent
 **record narrated walkthrough videos of a website** — driving the browser itself,
 speaking as it goes, with a visible cursor and timestamped captions.
 
 The agent decides what to show and what to say. The tool makes it a video.
+
+## Quickstart
+
+New here? `docs/quickstart.html` is the setup, start to finish, on one page:
+what you need, install, register the server, install the skill, ask for your
+first walkthrough. Serve it and read it in a browser:
+
+```bash
+cd server && npm run docs:serve      # http://127.0.0.1:8099/quickstart.html
+```
+
+That page is also a walkthrough of its own —
+`examples/storyboards/videostroll-setup.json` records it, so the setup video
+is rendered by the tool it explains, and re-renders whenever the page changes:
+
+```bash
+cd server && npm run render -- ../examples/storyboards/videostroll-setup.json out/
+```
 
 ## What comes out
 

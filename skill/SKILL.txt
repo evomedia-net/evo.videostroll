@@ -18,7 +18,7 @@ The tools, in the order you use them
 | --- | --- | --- |
 | videostroll_start | once — { url, title?, voice?, captions?, outputDir? } | no |
 | videostroll_observe | as often as you like — { sessionId } | no |
-| videostroll_step | once per storyboard step — { sessionId, narration, actions, id?, chapter?, minDurationMs? } | yes |
+| videostroll_step | once per storyboard step — { sessionId, narration, actions, id?, chapter?, minDurationMs?, voice? } | yes |
 | videostroll_finish | once — { sessionId, title?, captions? } | assembles |
 | videostroll_abort | if the walkthrough is wrong — { sessionId } | discards |
 | videostroll_render | batch — { storyboard, outputDir? } | the whole thing |
@@ -98,6 +98,21 @@ voice finishes, so the voice sets the length. Your job is to keep it humane:
   sentence is three steps wearing a coat.
 - Let the first step breathe — a plain "This is X" over the landing page,
   cursor resting, with minDurationMs of 3000–4000, before anything moves.
+
+3a. One voice, or two
+---------------------
+
+videostroll_start sets the voice every step inherits. A step may name its own
+with voice, and the override lasts that step only:
+
+- { "name": "en-US-AvaNeural" } - a different speaker, same provider and rate.
+- { "rate": 1.15 } - the same speaker, a little quicker.
+
+Use a second voice when the walkthrough genuinely has two parts - a narrator
+and a quoted user, an intro and the body. Do not alternate for decoration.
+A viewer reads a voice change as a change of speaker, so a switch that means
+nothing is a switch that misleads. npm run voices lists what is available,
+with gender and character; pick from that rather than guessing a name.
 
 4. Record
 ---------

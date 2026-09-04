@@ -5,13 +5,22 @@
   "description": "A walkthrough is a storyboard; the video is a rendering of it. One step = one piece of narration plus the browser actions that demonstrate it. Credentials are never part of a storyboard - use a Playwright storage-state file via `storageState` for authenticated sites.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "title", "url", "steps"],
+  "required": [
+    "version",
+    "title",
+    "url",
+    "steps"
+  ],
   "properties": {
     "version": {
       "const": 1,
       "description": "Storyboard format version. Bumped only on a breaking change to this schema."
     },
-    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
     "url": {
       "type": "string",
       "format": "uri",
@@ -21,29 +30,72 @@
       "type": "string",
       "description": "One line: what the viewer should be able to do or understand afterwards. Not narrated; kept so a re-cut knows what it is for."
     },
-    "audience": { "type": "string" },
+    "audience": {
+      "type": "string"
+    },
     "viewport": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "width": { "type": "integer", "minimum": 320, "default": 1920 },
-        "height": { "type": "integer", "minimum": 240, "default": 1080 },
-        "deviceScaleFactor": { "type": "number", "minimum": 1, "maximum": 3, "default": 1 }
+        "width": {
+          "type": "integer",
+          "minimum": 320,
+          "default": 1920
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 240,
+          "default": 1080
+        },
+        "deviceScaleFactor": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3,
+          "default": 1
+        }
       }
     },
     "voice": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "provider": { "type": "string", "enum": ["edge", "piper", "openai", "elevenlabs", "silent"], "default": "edge" },
-        "name": { "type": "string", "description": "Provider-specific voice id, e.g. en-US-GuyNeural for edge." },
-        "rate": { "type": "number", "minimum": 0.5, "maximum": 2, "default": 1 },
-        "wordsPerMinute": { "type": "integer", "minimum": 60, "maximum": 300, "default": 150, "description": "Used only by the silent provider to size its silence." }
+        "provider": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "piper",
+            "openai",
+            "elevenlabs",
+            "silent"
+          ],
+          "default": "edge"
+        },
+        "name": {
+          "type": "string",
+          "description": "Provider-specific voice id, e.g. en-US-GuyNeural for edge."
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2,
+          "default": 1
+        },
+        "wordsPerMinute": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 300,
+          "default": 150,
+          "description": "Used only by the silent provider to size its silence."
+        }
       }
     },
     "captions": {
       "type": "string",
-      "enum": ["sidecar", "burn", "both"],
+      "enum": [
+        "sidecar",
+        "burn",
+        "both"
+      ],
       "default": "sidecar",
       "description": "sidecar = .srt/.vtt beside the video; burn = rendered into the frames; both."
     },
@@ -54,30 +106,53 @@
     "steps": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/definitions/step" }
+      "items": {
+        "$ref": "#/definitions/step"
+      }
     }
   },
   "definitions": {
     "step": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["narration", "actions"],
+      "required": [
+        "narration",
+        "actions"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Stable id for chapters and for re-cutting. Defaults to the step's index." },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Stable id for chapters and for re-cutting. Defaults to the step's index."
+        },
         "narration": {
           "type": "string",
           "minLength": 1,
           "maxLength": 400,
-          "not": { "$ref": "#/definitions/looksLikeASecret" },
+          "not": {
+            "$ref": "#/definitions/looksLikeASecret"
+          },
           "description": "What is spoken. One idea, at most two sentences. Synthesised BEFORE the actions run so the step can be paced to it."
         },
         "actions": {
           "type": "array",
-          "items": { "$ref": "#/definitions/action" },
+          "items": {
+            "$ref": "#/definitions/action"
+          },
           "description": "May be empty for a 'look at this' step where the cursor rests."
         },
-        "minDurationMs": { "type": "integer", "minimum": 0, "description": "Hold the step at least this long even if voice and actions finish sooner." },
-        "chapter": { "type": "string", "description": "If set, starts an MP4 chapter with this title at this step." }
+        "minDurationMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Hold the step at least this long even if voice and actions finish sooner."
+        },
+        "chapter": {
+          "type": "string",
+          "description": "If set, starts an MP4 chapter with this title at this step."
+        },
+        "voice": {
+          "$ref": "#/definitions/voiceOverride"
+        }
       }
     },
     "selector": {
@@ -88,57 +163,278 @@
     "point": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["x", "y"],
-      "properties": { "x": { "type": "number" }, "y": { "type": "number" } },
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
       "description": "Viewport coordinates. Allowed, discouraged: a storyboard built on coordinates breaks when the layout shifts."
     },
     "target": {
       "oneOf": [
-        { "type": "object", "additionalProperties": false, "required": ["selector"], "properties": { "selector": { "$ref": "#/definitions/selector" } } },
-        { "type": "object", "additionalProperties": false, "required": ["point"], "properties": { "point": { "$ref": "#/definitions/point" } } }
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "selector"
+          ],
+          "properties": {
+            "selector": {
+              "$ref": "#/definitions/selector"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "point"
+          ],
+          "properties": {
+            "point": {
+              "$ref": "#/definitions/point"
+            }
+          }
+        }
       ]
     },
     "action": {
       "oneOf": [
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "url"],
-          "properties": { "type": { "const": "goto" }, "url": { "type": "string", "format": "uri" }, "waitUntil": { "type": "string", "enum": ["load", "domcontentloaded", "networkidle"], "default": "load" } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "url"
+          ],
+          "properties": {
+            "type": {
+              "const": "goto"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "waitUntil": {
+              "type": "string",
+              "enum": [
+                "load",
+                "domcontentloaded",
+                "networkidle"
+              ],
+              "default": "load"
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "target"],
-          "properties": { "type": { "const": "move" }, "target": { "$ref": "#/definitions/target" }, "durationMs": { "type": "integer", "minimum": 100, "default": 700, "description": "Glide time. Distance-scaled by the server if omitted." } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "target"
+          ],
+          "properties": {
+            "type": {
+              "const": "move"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "durationMs": {
+              "type": "integer",
+              "minimum": 100,
+              "default": 700,
+              "description": "Glide time. Distance-scaled by the server if omitted."
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "target"],
-          "properties": { "type": { "const": "hover" }, "target": { "$ref": "#/definitions/target" }, "holdMs": { "type": "integer", "minimum": 0, "default": 600 } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "target"
+          ],
+          "properties": {
+            "type": {
+              "const": "hover"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "holdMs": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 600
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "target"],
-          "properties": { "type": { "const": "click" }, "target": { "$ref": "#/definitions/target" }, "settleMs": { "type": "integer", "minimum": 0, "default": 250, "description": "Pause on the target before the click, so the viewer sees where it lands." } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "target"
+          ],
+          "properties": {
+            "type": {
+              "const": "click"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "settleMs": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 250,
+              "description": "Pause on the target before the click, so the viewer sees where it lands."
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "target", "text"],
-          "properties": { "type": { "const": "type" }, "target": { "$ref": "#/definitions/target" }, "text": { "type": "string", "not": { "$ref": "#/definitions/looksLikeASecret" } }, "msPerChar": { "type": "integer", "minimum": 0, "default": 60 } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "target",
+            "text"
+          ],
+          "properties": {
+            "type": {
+              "const": "type"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "text": {
+              "type": "string",
+              "not": {
+                "$ref": "#/definitions/looksLikeASecret"
+              }
+            },
+            "msPerChar": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 60
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "key"],
-          "properties": { "type": { "const": "press" }, "key": { "type": "string", "description": "Playwright key name, e.g. Enter, Tab, Control+K." } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "key"
+          ],
+          "properties": {
+            "type": {
+              "const": "press"
+            },
+            "key": {
+              "type": "string",
+              "description": "Playwright key name, e.g. Enter, Tab, Control+K."
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type"],
-          "properties": { "type": { "const": "scroll" }, "target": { "$ref": "#/definitions/target" }, "deltaY": { "type": "integer", "description": "Pixels, when no target. Positive scrolls down." }, "durationMs": { "type": "integer", "minimum": 100, "default": 800 } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "scroll"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "deltaY": {
+              "type": "integer",
+              "description": "Pixels, when no target. Positive scrolls down."
+            },
+            "durationMs": {
+              "type": "integer",
+              "minimum": 100,
+              "default": 800
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "target"],
-          "properties": { "type": { "const": "highlight" }, "target": { "$ref": "#/definitions/target" }, "holdMs": { "type": "integer", "minimum": 0, "description": "Defaults to the rest of the step." } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "target"
+          ],
+          "properties": {
+            "type": {
+              "const": "highlight"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "holdMs": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Defaults to the rest of the step."
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "ms"],
-          "properties": { "type": { "const": "wait" }, "ms": { "type": "integer", "minimum": 0, "maximum": 15000 } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "ms"
+          ],
+          "properties": {
+            "type": {
+              "const": "wait"
+            },
+            "ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15000
+            }
+          }
         },
         {
-          "type": "object", "additionalProperties": false, "required": ["type", "target"],
-          "properties": { "type": { "const": "waitFor" }, "target": { "$ref": "#/definitions/target" }, "state": { "type": "string", "enum": ["visible", "hidden", "attached"], "default": "visible" }, "timeoutMs": { "type": "integer", "minimum": 0, "default": 10000 } }
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "target"
+          ],
+          "properties": {
+            "type": {
+              "const": "waitFor"
+            },
+            "target": {
+              "$ref": "#/definitions/target"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "visible",
+                "hidden",
+                "attached"
+              ],
+              "default": "visible"
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 10000
+            }
+          }
         }
       ]
     },
@@ -146,6 +442,38 @@
       "description": "Rejected wherever free text is spoken or typed. Not a security control - an operator who wants to type a password into a storyboard can - but it stops the obvious mistake: pasting a real login into an example. Case-tolerance is spelled out with character classes because JSON Schema patterns are ECMA-262 without flags: an inline (?i) validates in Python and is a syntax error in every JavaScript validator.",
       "type": "string",
       "pattern": "([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]\\s*[:=]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]\\s*[:=]|[Ss][Ee][Cc][Rr][Ee][Tt]\\s*[:=]|[Tt][Oo][Kk][Ee][Nn]\\s*[:=]|[Bb][Ee][Aa][Rr][Ee][Rr]\\s+[A-Za-z0-9._-]{16,}|ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)"
+    },
+    "voiceOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A step's own voice, merged over the storyboard's. Every field is optional: naming only `name` swaps the speaker and keeps the provider and rate. Naming a different `provider` without a `name` does not inherit the old provider's voice name, because a voice name belongs to the provider that defines it.",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "piper",
+            "openai",
+            "elevenlabs",
+            "silent"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "Provider-specific voice id, e.g. en-US-GuyNeural for edge."
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "wordsPerMinute": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 300,
+          "description": "Used only by the silent provider to size its silence."
+        }
+      }
     }
   }
 }

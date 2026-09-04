@@ -12,7 +12,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { Session, render } from "./session.js";
-import { ActionSchema } from "./storyboard.js";
+import { ActionSchema, VoiceOverrideSchema } from "./storyboard.js";
 
 const sessions = new Map<string, Session>();
 
@@ -73,7 +73,7 @@ export function createServer(): McpServer {
     {
       title: "Record one step",
       description:
-        "One idea, at most two sentences of narration, and the actions that show it. Narration is synthesised first and the step is held until the voice finishes. Returns the step's timings and the page state after it.",
+        "One idea, at most two sentences of narration, and the actions that show it. Narration is synthesised first and the step is held until the voice finishes. Pass `voice` to speak this step in a different voice; anything it does not name is inherited from the session's. Returns the step's timings and the page state after it.",
       inputSchema: {
         sessionId: z.string(),
         narration: z.string().min(1).max(400),
@@ -81,6 +81,7 @@ export function createServer(): McpServer {
         id: z.string().optional(),
         minDurationMs: z.number().int().min(0).optional(),
         chapter: z.string().optional(),
+        voice: VoiceOverrideSchema.optional(),
       },
     },
     async ({ sessionId, ...step }) => {

@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "title": "Two narrators, one walkthrough",
+  "url": "https://www.evomedia.net/",
+  "goal": "Show that a walkthrough can hand off between voices: a storyboard voice every step inherits, and a step that names its own.",
+  "audience": "Someone deciding how to narrate a walkthrough with more than one speaker.",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "voice": {
+    "provider": "edge",
+    "name": "en-US-GuyNeural"
+  },
+  "captions": "both",
+  "steps": [
+    {
+      "id": "first-voice",
+      "chapter": "The storyboard's voice",
+      "narration": "Every step inherits the voice the storyboard names. This one does, so you are hearing the default narrator.",
+      "actions": [
+        { "type": "move", "target": { "selector": "role=heading" } }
+      ],
+      "minDurationMs": 4000
+    },
+    {
+      "id": "second-voice",
+      "chapter": "A step names its own",
+      "narration": "A step can name its own voice instead. Nothing else changes: the same provider, the same speaking rate, a different speaker.",
+      "voice": { "name": "en-US-AvaNeural" },
+      "actions": [
+        { "type": "scroll", "deltaY": 600, "durationMs": 1200 }
+      ]
+    },
+    {
+      "id": "third-voice",
+      "narration": "Any voice the provider offers will do. Run npm run voices to see the list, with the gender and character of each.",
+      "voice": { "name": "en-GB-RyanNeural" },
+      "actions": [
+        { "type": "scroll", "deltaY": 600, "durationMs": 1200 }
+      ]
+    },
+    {
+      "id": "faster",
+      "chapter": "Rate, not just name",
+      "narration": "A step can change the rate too, without naming a voice at all. This sentence is spoken a little quicker than the rest.",
+      "voice": { "rate": 1.15 },
+      "actions": [
+        { "type": "scroll", "deltaY": -1200, "durationMs": 1200 }
+      ]
+    },
+    {
+      "id": "back-again",
+      "chapter": "Back to the default",
+      "narration": "An override lasts one step. This one says nothing about a voice, so it is back to the storyboard's narrator.",
+      "actions": [
+        { "type": "move", "target": { "selector": "role=heading" } }
+      ]
+    }
+  ]
+}

@@ -72,6 +72,43 @@ was asked for is a wrong-looking success, so a failed voice fails the step
 with a message naming the alternatives. Check the Edge endpoint still answers
 before trusting a release: npm run check:edge.
 
+Choosing one
+~~~~~~~~~~~~
+
+The edge provider offers 322 voices, 47 of them English and split almost
+evenly between male and female. List them rather than guessing a name:
+
+    npm run voices                 # English voices, male and female
+    npm run voices -- en-GB        # one locale
+    npm run voices -- en-US female # locale and gender
+    npm run voices -- all          # every locale the service offers
+
+Each row gives the id to use as voice.name, the gender, and the character
+Microsoft assigns it - Friendly, Positive; Cheerful, Clear; and so on.
+
+More than one voice in a walkthrough
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A step may name its own voice. Anything it does not name it inherits from the
+storyboard's, and the override lasts exactly one step:
+
+    {
+      "voice": { "provider": "edge", "name": "en-US-GuyNeural" },
+      "steps": [
+        { "narration": "The default narrator." },
+        { "narration": "A different speaker, same provider and rate.",
+          "voice": { "name": "en-US-AvaNeural" } },
+        { "narration": "A little quicker, same voice.", "voice": { "rate": 1.15 } },
+        { "narration": "Back to the default." }
+      ]
+    }
+
+The interactive videostroll_step tool takes the same voice field, so an
+agent can hand off between narrators mid-walkthrough. One rule is not plain
+merging: naming a different provider without a name does NOT carry the
+old provider's voice name across, because a name belongs to the provider that
+defines it. Worked example: examples/storyboards/two-voices.json.
+
 Batch render from the command line
 ----------------------------------
 

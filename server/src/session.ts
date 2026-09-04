@@ -23,7 +23,7 @@ import { concatSegments, encodeSegment, mux, probeDurationMs, writeChapters, typ
 import { cuesForStep, toSrt, toVtt, type Cue } from "./captions.js";
 import { CURSOR_INIT_SCRIPT, Cursor } from "./cursor.js";
 import { StepRecorder, type StepCapture } from "./recorder.js";
-import { parseStep, parseStoryboard, StoryboardSchema, ViewportSchema, VoiceSchema, type Step, type Storyboard, type Voice } from "./storyboard.js";
+import { parseStep, parseStoryboard, resolveVoice, StoryboardSchema, ViewportSchema, VoiceSchema, type Step, type Storyboard, type Voice } from "./storyboard.js";
 import { getProvider, type Synthesis, type TtsProvider } from "./tts/index.js";
 import { concatWav, padWav } from "./wav.js";
 
@@ -60,6 +60,8 @@ export interface StepRecord {
   startMs: number;
   endMs: number;
   narrationMs: number;
+  /** The voice this step was actually spoken in, after any per-step override. */
+  voice: Voice;
   url: string;
   title: string;
   thumbnail: string;
@@ -108,6 +110,8 @@ export class Session {
   private readonly records: Recorded[] = [];
   private cumulativeMs = 0;
   private finished = false;
+  /** Providers for voices a step named that are not the storyboard's, keyed by provider. */
+  private readonly extraProviders = new Map<Voice["provider"], TtsProvider>();
 
   private constructor(
     private readonly browser: Browser,
@@ -153,6 +157,22 @@ export class Session {
     return new Session(browser, context, page, cdp, cursor, provider, voice, viewport, title, o.url, o.captions ?? "sidecar", outputDir);
   }
 
+  /**
+   * The provider for a resolved voice. The session's own provider is reused for
+   * the storyboard's voice - the common path, and the one the constructor
+   * already built - and any other provider a step names is made once and kept.
+   * Providers are stateless per call, so one instance serves every step.
+   */
+  private providerFor(voice: Voice): TtsProvider {
+    if (voice.provider === this.voice.provider) return this.provider;
+    let provider = this.extraProviders.get(voice.provider);
+    if (!provider) {
+      provider = getProvider(voice);
+      this.extraProviders.set(voice.provider, provider);
+    }
+    return provider;
+  }
+
   async observe(): Promise<PageState> {
     let snapshot = "";
     try {
@@ -169,8 +189,10 @@ export class Session {
     const index = this.records.length;
     const id = step.id ?? `step-${String(index + 1).padStart(2, "0")}`;
 
-    // 1. Narration first, so the pacing is known before anything moves.
-    const synthesis = await this.provider.synthesise(step.narration, this.voice);
+    // 1. Narration first, so the pacing is known before anything moves. A step
+    // may name its own voice; anything it does not name it inherits.
+    const voice = resolveVoice(this.voice, step.voice);
+    const synthesis = await this.providerFor(voice).synthesise(step.narration, voice);
 
     // 2. Record while the actions run.
     const frameDir = join(this.workDir, `frames-${String(index).padStart(3, "0")}`);
@@ -209,6 +231,7 @@ export class Session {
       startMs: this.cumulativeMs,
       endMs: this.cumulativeMs + durationMs,
       narrationMs: synthesis.durationMs,
+      voice,
       url: this.page.url(),
       title: await this.page.title(),
       thumbnail,

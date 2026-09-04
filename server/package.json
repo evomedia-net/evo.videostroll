@@ -21,7 +21,8 @@
     "test": "vitest run",
     "check:edge": "npm run build && node scripts/check-edge.mjs",
     "render": "npm run build && node scripts/render.mjs",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "voices": "node scripts/voices.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>evo.videostroll — Voices</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --edge: #262b36;
+    --ink: #e8ecf3;
+    --dim: #98a2b3;
+    --accent: #4ade80;
+    --accent-dim: #14532d;
+    --code-bg: #0b0d11;
+    --mono: ui-monospace, "Cascadia Mono", "Consolas", "SF Mono", monospace;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  header { border-bottom: 1px solid var(--edge); padding-bottom: 18px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  .dot { color: var(--accent); }
+  header p { color: var(--dim); margin: 8px 0 0; max-width: 62em; }
+
+  /* Controls */
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 20px 0 6px; }
+  label { display: block; font-size: 12px; color: var(--dim); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
+  select, input[type="text"] {
+    background: var(--code-bg); color: var(--ink); border: 1px solid var(--edge);
+    border-radius: 8px; padding: 9px 11px; font-family: inherit; font-size: 14px; min-width: 0;
+  }
+  input[type="text"] { width: 260px; }
+  .grow { flex: 1 1 240px; }
+  .chk { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 14px; padding-bottom: 9px; }
+
+  /* Sample + rate */
+  .sample { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 4px 0 18px; }
+  .sample input[type="text"] { width: 100%; }
+  input[type="range"] { width: 190px; accent-color: var(--accent); }
+  .rate-val { font-family: var(--mono); color: var(--accent); min-width: 3.4em; display: inline-block; }
+
+  /* Table */
+  .count { color: var(--dim); font-size: 13px; margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em;
+    padding: 8px 10px; border-bottom: 1px solid var(--edge); position: sticky; top: 0; background: var(--bg);
+  }
+  tbody tr { border-bottom: 1px solid var(--edge); }
+  tbody tr:hover { background: var(--panel); }
+  tbody tr[aria-selected="true"] { background: rgba(74,222,128,.08); }
+  td { padding: 8px 10px; vertical-align: middle; }
+  td.id { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  td.tags { color: var(--dim); font-size: 13px; }
+  .g { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--edge); color: var(--dim); white-space: nowrap; }
+  .g.f { color: #f0abfc; border-color: #6b2168; }
+  .g.m { color: #7dd3fc; border-color: #0c4a6e; }
+  .ml { font-size: 11px; color: var(--dim); border: 1px dashed var(--edge); border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+
+  button {
+    background: var(--code-bg); color: var(--ink); border: 1px solid var(--edge);
+    border-radius: 8px; padding: 7px 13px; font-family: inherit; font-size: 14px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent-dim); color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.play { min-width: 74px; }
+
+  /* Selection panel */
+  .picked {
+    position: sticky; bottom: 0; margin-top: 22px; background: var(--panel);
+    border: 1px solid var(--edge); border-radius: 12px; padding: 16px 18px;
+  }
+  .picked h2 { font-size: 15px; margin: 0 0 4px; }
+  .picked .who { color: var(--dim); font-size: 13px; margin: 0 0 12px; }
+  .snip { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+  .snip pre {
+    flex: 1; margin: 0; background: var(--code-bg); border: 1px solid var(--edge); border-radius: 8px;
+    padding: 10px 12px; font-family: var(--mono); font-size: 13px; overflow-x: auto; white-space: pre;
+  }
+  .snip .lbl { font-size: 12px; color: var(--dim); width: 5.5em; flex: none; }
+  .msg { color: var(--dim); font-size: 13px; min-height: 1.4em; margin-top: 10px; }
+  .msg.err { color: #fca5a5; }
+  .empty { color: var(--dim); padding: 28px 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>evo<span class="dot">.</span>videostroll — voices</h1>
+    <p>Every voice the <code>edge</code> provider can speak. Filter, hear one, then copy the
+      line into a storyboard. Same provider the recorder uses, so a preview is the real thing.
+      <a href="/quickstart.html">Back to the quickstart</a>.</p>
+  </header>
+
+  <div class="controls">
+    <div>
+      <label for="locale">Locale</label>
+      <select id="locale"><option value="all">Loading…</option></select>
+    </div>
+    <div>
+      <label for="gender">Gender</label>
+      <select id="gender">
+        <option value="all">Any</option>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+      </select>
+    </div>
+    <div class="grow">
+      <label for="q">Search name or character</label>
+      <input id="q" type="text" placeholder="cheerful, Ava, confident…" autocomplete="off">
+    </div>
+    <div class="chk"><input id="mono" type="checkbox" checked><label for="mono" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px">Hide multilingual variants</label></div>
+  </div>
+
+  <div class="sample">
+    <div class="grow">
+      <label for="text">Sample sentence</label>
+      <input id="text" type="text" maxlength="240">
+    </div>
+    <div>
+      <label for="rate">Rate <span class="rate-val" id="rateVal">1.00×</span></label>
+      <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1">
+    </div>
+  </div>
+
+  <p class="count" id="count">Loading the catalogue…</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:86px"></th><th>Voice id</th><th>Name</th><th>Gender</th><th>Locale</th><th>Character</th></tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+  </table>
+
+  <section class="picked" hidden id="picked">
+    <h2 id="pickedId">—</h2>
+    <p class="who" id="pickedWho"></p>
+    <div class="snip">
+      <span class="lbl">Storyboard</span>
+      <pre id="snipSb"></pre>
+      <button data-copy="snipSb">Copy</button>
+    </div>
+    <div class="snip">
+      <span class="lbl">One step</span>
+      <pre id="snipStep"></pre>
+      <button data-copy="snipStep">Copy</button>
+    </div>
+    <p class="msg" id="msg"></p>
+  </section>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let all = [];
+let picked = null;
+let audio = null;
+
+const state = () => ({
+  locale: $("locale").value,
+  gender: $("gender").value,
+  q: $("q").value.trim().toLowerCase(),
+  mono: $("mono").checked,
+});
+
+function visible() {
+  const s = state();
+  return all.filter((v) => {
+    if (s.locale !== "all") {
+      const have = v.locale.toLowerCase(), want = s.locale.toLowerCase();
+      if (want.includes("-") ? have !== want : have.split("-")[0] !== want) return false;
+    }
+    if (s.gender !== "all" && v.gender.toLowerCase() !== s.gender) return false;
+    if (s.mono && v.multilingual) return false;
+    if (s.q) {
+      const hay = (v.id + " " + v.given + " " + v.localeName + " " + v.tags.join(" ")).toLowerCase();
+      if (!hay.includes(s.q)) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const rows = visible();
+  $("count").textContent = rows.length + " of " + all.length + " voices";
+  const body = $("rows");
+  body.textContent = "";
+  if (rows.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 6; td.className = "empty"; td.textContent = "No voice matches that. Widen the filters.";
+    tr.append(td); body.append(tr);
+    return;
+  }
+  for (const v of rows) {
+    const tr = document.createElement("tr");
+    if (picked && picked.id === v.id) tr.setAttribute("aria-selected", "true");
+
+    const play = document.createElement("button");
+    play.className = "play"; play.textContent = "Play"; play.dataset.id = v.id;
+    play.addEventListener("click", () => preview(v, play));
+    const tdPlay = document.createElement("td"); tdPlay.append(play);
+
+    const tdId = document.createElement("td"); tdId.className = "id"; tdId.textContent = v.id;
+    if (v.multilingual) { const s = document.createElement("span"); s.className = "ml"; s.textContent = "multi"; tdId.append(s); }
+
+    const tdName = document.createElement("td"); tdName.textContent = v.given;
+    const tdG = document.createElement("td");
+    const g = document.createElement("span");
+    g.className = "g " + (v.gender === "Female" ? "f" : "m"); g.textContent = v.gender;
+    tdG.append(g);
+    const tdLoc = document.createElement("td"); tdLoc.textContent = v.localeName;
+    const tdTags = document.createElement("td"); tdTags.className = "tags"; tdTags.textContent = v.tags.join(", ") || "—";
+
+    tr.append(tdPlay, tdId, tdName, tdG, tdLoc, tdTags);
+    tr.addEventListener("click", (e) => { if (e.target.tagName !== "BUTTON") select(v); });
+    body.append(tr);
+  }
+}
+
+function select(v) {
+  picked = v;
+  $("picked").hidden = false;
+  $("pickedId").textContent = v.id;
+  $("pickedWho").textContent = v.given + " · " + v.gender + " · " + v.localeName + (v.tags.length ? " · " + v.tags.join(", ") : "");
+  const rate = Number($("rate").value);
+  const r = rate === 1 ? "" : ', "rate": ' + rate;
+  $("snipSb").textContent = '"voice": { "provider": "edge", "name": "' + v.id + '"' + r + " }";
+  $("snipStep").textContent = '{ "narration": "…", "voice": { "name": "' + v.id + '"' + r + " } }";
+  render();
+}
+
+async function preview(v, button) {
+  select(v);
+  const msg = $("msg");
+  msg.className = "msg"; msg.textContent = "Synthesising…";
+  const was = button.textContent;
+  button.disabled = true; button.textContent = "…";
+  if (audio) { audio.pause(); audio = null; }
+  const qs = new URLSearchParams({ name: v.id, rate: $("rate").value, text: $("text").value });
+  try {
+    const res = await fetch("/api/preview?" + qs.toString());
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(body.error || res.statusText);
+    }
+    const ms = res.headers.get("x-duration-ms");
+    const blob = await res.blob();
+    audio = new Audio(URL.createObjectURL(blob));
+    await audio.play();
+    msg.textContent = v.id + " · " + (ms ? (Number(ms) / 1000).toFixed(1) + "s" : "playing");
+  } catch (e) {
+    msg.className = "msg err";
+    msg.textContent = e.message;
+  } finally {
+    button.disabled = false; button.textContent = was;
+  }
+}
+
+for (const b of document.querySelectorAll("button[data-copy]")) {
+  b.addEventListener("click", async () => {
+    const text = $(b.dataset.copy).textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      const was = b.textContent; b.textContent = "Copied";
+      setTimeout(() => { b.textContent = was; }, 1200);
+    } catch {
+      $("msg").className = "msg err";
+      $("msg").textContent = "The browser would not allow the clipboard. Select the text and copy it.";
+    }
+  });
+}
+
+$("rate").addEventListener("input", () => {
+  $("rateVal").textContent = Number($("rate").value).toFixed(2) + "×";
+  if (picked) select(picked);
+});
+for (const id of ["locale", "gender", "mono"]) $(id).addEventListener("change", render);
+$("q").addEventListener("input", render);
+
+(async () => {
+  try {
+    const res = await fetch("/api/voices");
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    const data = await res.json();
+    all = data.voices;
+    const sel = $("locale");
+    sel.textContent = "";
+    const any = document.createElement("option");
+    any.value = "all"; any.textContent = "Any (" + data.total + ")";
+    sel.append(any);
+    const en = document.createElement("option");
+    en.value = "en"; en.textContent = "English — all";
+    sel.append(en);
+    for (const l of data.locales) {
+      const o = document.createElement("option");
+      o.value = l.locale; o.textContent = l.localeName + " (" + l.count + ")";
+      sel.append(o);
+    }
+    sel.value = "en";
+    $("text").value = "This is the projects page. Each card is one product.";
+    render();
+  } catch (e) {
+    $("count").textContent = "";
+    $("rows").innerHTML = "";
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 6; td.className = "empty";
+    td.textContent = "Could not load the catalogue: " + e.message + ". The voice list is a network call — check you are online.";
+    tr.append(td); $("rows").append(tr);
+  }
+})();
+</script>
+</body>
+</html>

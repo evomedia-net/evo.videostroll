@@ -101,6 +101,17 @@ evenly between male and female. List them rather than guessing a name:
 Each row gives the id to use as voice.name, the gender, and the character
 Microsoft assigns it - Friendly, Positive; Cheerful, Clear; and so on.
 
+Or hear them. Picking a voice from a list is guessing, so there is a picker:
+
+    cd server && npm run docs:serve      # then open http://127.0.0.1:8099/voices.html
+
+Filter by locale, gender or character, play a sample at the rate you intend to
+use, and copy the finished "voice": { ... } line into a storyboard. Previews go
+through the same provider the recorder uses, so what you hear is what you get.
+The catalogue is a live call, so the page needs the network; it binds to
+localhost only, and the preview endpoint validates what it is asked to say -
+including refusing to speak anything credential-shaped.
+
 More than one voice in a walkthrough
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -194,6 +194,23 @@ npx playwright install chromium
 npm test
 ```
 
+### Keeping this machine current
+
+There is no server to deploy to, but "installed" is three things, and a
+`git pull` is only the first: `server/dist/` is gitignored and the registered
+MCP server runs `dist/index.js`, so a pull alone leaves it on stale compiled
+code — and the skill is copied out to `~/.claude/skills/`, which nothing
+detects the drift of. One command does all three and says what moved:
+
+```bash
+cd server && npm run deploy:local
+npm run deploy:local -- --check     # report what is stale, change nothing
+npm run deploy:local -- --no-pull   # build and copy this branch as it is
+```
+
+It refuses to pull over uncommitted changes or onto a branch that is not the
+default, and says so rather than reporting everything as current.
+
 Register the server with an MCP client (Claude Code, Claude Desktop, any
 other) by pointing it at `node server/dist/index.js` after `npm run build`,
 or at `npx evo.videostroll` once published. Tools: `videostroll_start`,

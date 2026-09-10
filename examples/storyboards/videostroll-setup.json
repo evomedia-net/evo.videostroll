@@ -10,7 +10,7 @@
   },
   "voice": {
     "provider": "edge",
-    "name": "en-US-GuyNeural"
+    "name": "en-US-JennyNeural"
   },
   "captions": "both",
   "steps": [
@@ -71,7 +71,7 @@
     },
     {
       "id": "test",
-      "narration": "Run the tests before wiring anything up. All sixty eight of them run offline.",
+      "narration": "Run the tests before wiring anything up. All one hundred and five of them run offline.",
       "actions": [
         {
           "type": "move",
@@ -131,6 +131,27 @@
       ]
     },
     {
+      "id": "current",
+      "chapter": "Keeping it current",
+      "narration": "Later, one command keeps this machine current. A pull alone is not enough, because the built server and the copied skill both live outside git.",
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#current"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#current pre"
+          },
+          "holdMs": 2200
+        }
+      ]
+    },
+    {
       "id": "use",
       "chapter": "Ask for one",
       "narration": "That is the whole setup. Start a session and ask for a walkthrough in plain words.",
@@ -154,10 +175,7 @@
     {
       "id": "login",
       "chapter": "Behind a login",
-      "narration": "For a site behind a sign in, you sign in yourself once and it keeps the session. Nothing types a password and no storyboard ever holds one.",
-      "voice": {
-        "name": "en-US-AvaNeural"
-      },
+      "narration": "For a site behind a sign in, you sign in yourself once and it keeps the session. This is the one step that needs a full browser, and it tells you if it cannot find one.",
       "actions": [
         {
           "type": "scroll",

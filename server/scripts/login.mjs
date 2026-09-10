@@ -89,7 +89,42 @@ const out = verdict.path;
 console.log(`\nOpening a browser at ${url}`);
 console.log(`Sign in in that window. Nothing is typed for you and nothing reads what you type.`);
 
-const browser = await chromium.launch({ headless: false });
+// A headed browser is the whole point of this script, and it is the one
+// Playwright install people skip: recording runs headless, which uses a
+// SEPARATE chromium-headless-shell build, so a machine can record for weeks
+// and still have no real browser. Playwright's own message is good; wrapping
+// it stops an uncaught exception dumping a stack trace and an empty `log: []`
+// at somebody who just wanted to sign in.
+let browser;
+try {
+  browser = await chromium.launch({ headless: false });
+} catch (e) {
+  // A headed browser is the whole point of this script, and it is the one
+  // Playwright install people skip: recording runs headless, which uses a
+  // SEPARATE chromium-headless-shell build, so a machine can record for weeks
+  // and still have no real browser. Playwright's own message is good; this
+  // stops an uncaught exception dumping a stack trace and an empty `log: []`
+  // at somebody who only wanted to sign in.
+  const msg = String((e && e.message) || e);
+  const first = msg.split("\n")[0];
+  const advice = /Executable doesn't exist|playwright install/i.test(msg)
+    ? [
+        "This needs the FULL Chromium, not the headless shell that recording uses:",
+        "",
+        "  cd server && npx playwright install chromium",
+        "",
+        "If it is already installed, check whether this shell points elsewhere:",
+        "",
+        "  PowerShell:  $env:PLAYWRIGHT_BROWSERS_PATH",
+      ]
+    : [
+        "If this shell has no desktop session - SSH, a CI runner, an agent's",
+        "shell - it cannot open a window. Run it from a terminal on the machine",
+        "you are sitting at. That is deliberate: nothing signs in for you.",
+      ];
+  console.error(["", "Could not open a browser window.", "", "  " + first, ""].concat(advice, [""]).join("\n"));
+  process.exit(1);
+}
 const context = await browser.newContext();
 const page = await context.newPage();
 await page.goto(url, { waitUntil: "load" }).catch((e) => {

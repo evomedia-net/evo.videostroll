@@ -153,7 +153,15 @@ npm run login -- https://app.example.com
 ```
 
 A real browser window opens. Sign in however the site asks — password manager,
-second factor, SSO redirect — then press Enter in the terminal. The cookies and
+second factor, SSO redirect — then press Enter in the terminal.
+
+> **This is the one step that needs the full Chromium.** Recording runs
+> headless, which uses a separate `chromium-headless-shell` build, so a
+> machine can record for weeks and still have no real browser. If the helper
+> cannot open a window it says so and tells you to run
+> `npx playwright install chromium`. It also has to run in a terminal with a
+> desktop session — an SSH session or an agent's shell cannot open a window,
+> which is deliberate: nothing signs in for you. The cookies and
 localStorage are written to `auth/<host>.storage-state.json`, and a storyboard
 points at it:
 

@@ -147,7 +147,10 @@ site changes, edit the steps that changed and `videostroll_render` again.
 
 ## What this skill will not do
 
-- Record behind a login it was not given a `storageState` file for.
+- Record behind a login it was not given a `storageState` file for. If a
+  walkthrough needs one, stop and ask the operator to run
+  `npm run login -- <url>` and hand you the path. Never ask for a password,
+  never offer to type one, and never put one in a storyboard.
 - Guess a site's terms of service. Recording someone else's site is the
   operator's call, not the agent's.
 - Pad. If the goal is met in six steps, it is six steps.

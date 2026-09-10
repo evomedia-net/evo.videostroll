@@ -4,8 +4,14 @@
   "url": "http://127.0.0.1:8099/quickstart.html",
   "goal": "Someone who has never seen the project can install it, register it with their agent, and record their first walkthrough.",
   "audience": "A developer who has just cloned the repository and wants it working.",
-  "viewport": { "width": 1920, "height": 1080 },
-  "voice": { "provider": "edge", "name": "en-US-GuyNeural" },
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "voice": {
+    "provider": "edge",
+    "name": "en-US-GuyNeural"
+  },
   "captions": "both",
   "steps": [
     {
@@ -13,7 +19,12 @@
       "chapter": "What it is",
       "narration": "This is evo dot videostroll. An agent records a narrated walkthrough of a website, and this page is how you set it up.",
       "actions": [
-        { "type": "move", "target": { "selector": "h1" } }
+        {
+          "type": "move",
+          "target": {
+            "selector": "h1"
+          }
+        }
       ],
       "minDurationMs": 4500
     },
@@ -22,8 +33,19 @@
       "chapter": "What you need",
       "narration": "You need Node twenty or newer, and nothing else. The video encoder ships inside the package, so there is no separate install.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#prereqs" }, "durationMs": 900 },
-        { "type": "move", "target": { "selector": "#prereqs h2" } }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#prereqs"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "move",
+          "target": {
+            "selector": "#prereqs h2"
+          }
+        }
       ]
     },
     {
@@ -31,16 +53,39 @@
       "chapter": "Install",
       "narration": "Clone the repository and install from inside the server folder. The browser download is a one off.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#install" }, "durationMs": 900 },
-        { "type": "highlight", "target": { "selector": "#install pre:first-of-type" }, "holdMs": 1800 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#install"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#install pre:first-of-type"
+          },
+          "holdMs": 1800
+        }
       ]
     },
     {
       "id": "test",
-      "narration": "Run the tests before wiring anything up. All thirty eight of them run offline.",
+      "narration": "Run the tests before wiring anything up. All sixty eight of them run offline.",
       "actions": [
-        { "type": "move", "target": { "selector": "#install pre:last-of-type" } },
-        { "type": "highlight", "target": { "selector": "#install pre:last-of-type" }, "holdMs": 1500 }
+        {
+          "type": "move",
+          "target": {
+            "selector": "#install pre:last-of-type"
+          }
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#install pre:last-of-type"
+          },
+          "holdMs": 1500
+        }
       ]
     },
     {
@@ -48,8 +93,20 @@
       "chapter": "Register it",
       "narration": "One command registers the server for every project on the machine. Check it took, and look for the word Connected.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#register" }, "durationMs": 900 },
-        { "type": "highlight", "target": { "selector": "#register pre:first-of-type" }, "holdMs": 2000 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#register"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#register pre:first-of-type"
+          },
+          "holdMs": 2000
+        }
       ]
     },
     {
@@ -57,8 +114,20 @@
       "chapter": "The skill",
       "narration": "The server records. The skill is what makes the recording worth watching, so copy it into your skills folder.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#skill" }, "durationMs": 900 },
-        { "type": "highlight", "target": { "selector": "#skill pre" }, "holdMs": 1800 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#skill"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#skill pre"
+          },
+          "holdMs": 1800
+        }
       ]
     },
     {
@@ -66,8 +135,44 @@
       "chapter": "Ask for one",
       "narration": "That is the whole setup. Start a session and ask for a walkthrough in plain words.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#use" }, "durationMs": 900 },
-        { "type": "highlight", "target": { "selector": "#use pre" }, "holdMs": 2200 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#use"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#use pre"
+          },
+          "holdMs": 2200
+        }
+      ]
+    },
+    {
+      "id": "login",
+      "chapter": "Behind a login",
+      "narration": "For a site behind a sign in, you sign in yourself once and it keeps the session. Nothing types a password and no storyboard ever holds one.",
+      "voice": {
+        "name": "en-US-AvaNeural"
+      },
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#login"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#login pre:first-of-type"
+          },
+          "holdMs": 2000
+        }
       ]
     },
     {
@@ -75,8 +180,20 @@
       "chapter": "Re-cut, do not redo",
       "narration": "Every recording also writes the storyboard that produced it. When the site changes, edit the steps that changed and render again.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#batch" }, "durationMs": 900 },
-        { "type": "highlight", "target": { "selector": "#batch pre" }, "holdMs": 1800 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#batch"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#batch pre"
+          },
+          "holdMs": 1800
+        }
       ]
     },
     {
@@ -84,17 +201,41 @@
       "chapter": "What comes out",
       "narration": "Out comes the video, captions aligned to the spoken words, a manifest of every step, and a still for each one.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#output" }, "durationMs": 900 },
-        { "type": "move", "target": { "selector": "#output .grid" }, "durationMs": 1200 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#output"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "move",
+          "target": {
+            "selector": "#output .grid"
+          },
+          "durationMs": 1200
+        }
       ]
     },
     {
       "id": "voices",
       "chapter": "Voices",
-      "narration": "Three voices: online by default, fully offline with Piper, or silent for tests. None of them quietly falls back to another.",
+      "narration": "Three providers, and three hundred voices to choose from. List them by locale and gender, and let a single step speak in its own.",
       "actions": [
-        { "type": "scroll", "target": { "selector": "#voices" }, "durationMs": 900 },
-        { "type": "move", "target": { "selector": "#voices ul" }, "durationMs": 1100 }
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#voices"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#voices pre"
+          },
+          "holdMs": 2000
+        }
       ]
     }
   ]

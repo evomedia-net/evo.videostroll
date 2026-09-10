@@ -124,6 +124,36 @@ merging: naming a different provider without a name does NOT carry the
 old provider's voice name across, because a name belongs to the provider that
 defines it. Worked example: examples/storyboards/two-voices.json.
 
+Sites behind a login
+--------------------
+
+The recorder never types a password and the storyboard never holds one. You
+sign in yourself, once, and it keeps the session:
+
+    npm run login -- https://app.example.com
+
+A real browser window opens. Sign in however the site asks - password manager,
+second factor, SSO redirect - then press Enter in the terminal. The cookies and
+localStorage are written to auth/<host>.storage-state.json, and a storyboard
+points at it:
+
+    { "url": "https://app.example.com/dashboard",
+      "storageState": "auth/app.example.com.storage-state.json" }
+
+videostroll_start takes the same path, so an agent can record behind a login
+having been given a file path and nothing else.
+
+That file is a live session - treat it like a password. The helper will
+only write it where git already ignores it and refuses anywhere else; it prints
+counts and hostnames but never a cookie value; and it refuses to save a file
+that captured nothing, which is what a half-finished sign-in produces. Sessions
+expire, so before recording:
+
+    npm run login -- --check auth/app.example.com.storage-state.json
+
+That exits non-zero if anything has expired, which is cheaper than finding out
+halfway through a render.
+
 Batch render from the command line
 ----------------------------------
 

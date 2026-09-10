@@ -23,7 +23,8 @@
     "render": "npm run build && node scripts/render.mjs",
     "start": "node dist/index.js",
     "docs:serve": "node scripts/serve-docs.mjs",
-    "voices": "node scripts/voices.mjs"
+    "voices": "node scripts/voices.mjs",
+    "login": "npm run build && node scripts/login.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

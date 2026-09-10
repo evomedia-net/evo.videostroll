@@ -119,7 +119,7 @@ npm ci
 npx playwright install chromium
 npm run build</pre>
     <p>Confirm it works before wiring anything up. Every test runs offline.</p>
-<pre>npm test        <span class="c"># 38 tests, no network</span></pre>
+<pre>npm test        <span class="c"># 68 tests, no network</span></pre>
   </section>
 
   <section id="register">
@@ -152,15 +152,31 @@ cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
       what it recorded against what it said.</p>
   </section>
 
+  <section id="login">
+    <h2><span class="n">6</span> Sites behind a login</h2>
+    <p>The recorder never types a password and a storyboard never holds one.
+      <strong>You sign in yourself, once</strong>, and it keeps the session.</p>
+<pre>npm run login -- https://app.example.com</pre>
+    <p>A real browser window opens. Sign in however the site asks &mdash; password
+      manager, second factor, SSO &mdash; then press Enter in the terminal. The
+      session is written to <code>auth/&lt;host&gt;.storage-state.json</code>, which
+      git ignores, and a storyboard points at it.</p>
+<pre>{ <span class="k">"url"</span>: "https://app.example.com/dashboard",
+  <span class="k">"storageState"</span>: "auth/app.example.com.storage-state.json" }</pre>
+    <p>That file is a live session &mdash; treat it like a password. Sessions
+      expire, so check one before you rely on it.</p>
+<pre>npm run login -- --check auth/app.example.com.storage-state.json</pre>
+  </section>
+
   <section id="batch">
-    <h2><span class="n">6</span> Or render a storyboard</h2>
+    <h2><span class="n">7</span> Or render a storyboard</h2>
     <p>Every recording also writes the storyboard that produced it. When the site changes,
       edit the steps that changed and render again. No agent needed.</p>
 <pre>npm run render -- ../examples/storyboards/example-com.json out/</pre>
   </section>
 
   <section id="output">
-    <h2><span class="n">7</span> What comes out</h2>
+    <h2><span class="n">8</span> What comes out</h2>
     <div class="grid">
       <div class="out"><b>walkthrough.mp4</b><span>1080p30, H.264 and AAC</span></div>
       <div class="out"><b>walkthrough.captioned.mp4</b><span>the same, captions burned in</span></div>
@@ -172,7 +188,13 @@ cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
   </section>
 
   <section id="voices">
-    <h2><span class="n">8</span> Voices</h2>
+    <h2><span class="n">9</span> Voices</h2>
+    <p><strong>Pick one rather than guessing a name.</strong> The default provider
+      offers 322 voices &mdash; 47 of them English, split almost evenly between male
+      and female &mdash; each listed with its gender and character.</p>
+<pre>npm run voices -- en-US female</pre>
+    <p>A single step can name its own voice, so one walkthrough can hand off
+      between narrators.</p>
     <ul>
       <li><b>edge</b> — the default. A network call, word-level timings, nothing to install.</li>
       <li><b>piper</b> — fully offline. Set <code>PIPER_PATH</code> and <code>PIPER_MODEL</code>.</li>

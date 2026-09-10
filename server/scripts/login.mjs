@@ -18,7 +18,7 @@
  * never printed, and it should be deleted when you are finished with it.
  */
 import { createInterface } from "node:readline";
-import { readFile, rm, stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -175,6 +175,23 @@ await page.goto(url, { waitUntil: "load" }).catch((e) => {
 // Enter in this terminal is the signal. If stdin is not a terminal - a pipe, a
 // CI runner - there is nobody to press it, so closing the window is the signal
 // instead. Whichever happens first wins; the other is cleaned up.
+// Whichever way you finish, the session is kept.
+//
+// storageState() cannot be read once the browser is gone, so a snapshot is
+// taken every couple of seconds while it is alive and the newest non-empty one
+// is held. Before this, closing the window - the natural "I'm done" gesture,
+// and the ONLY signal available when stdin is not a terminal - hit an abort
+// path and threw away a completed sign-in.
+let snapshot = null;
+const poll = setInterval(async () => {
+  try {
+    const s = await context.storageState();
+    if (!isEmpty(s)) snapshot = s;
+  } catch {
+    /* the browser is closing; the last snapshot stands */
+  }
+}, 2000);
+
 const closed = new Promise((r) => browser.on("disconnected", () => r("closed")));
 let rl;
 const pressed = process.stdin.isTTY
@@ -190,24 +207,35 @@ if (!process.stdin.isTTY) {
 
 const how = await Promise.race([pressed, closed]);
 rl?.close();
+clearInterval(poll);
 
-if (how === "closed") {
-  console.error("\nThe browser was closed before the session could be saved. Nothing was written.");
+// Enter, with the browser still up: read it fresh. Closed: the last snapshot.
+let state = snapshot;
+if (how === "pressed") {
+  try {
+    state = await context.storageState();
+  } catch {
+    /* fall back to the snapshot */
+  }
+}
+
+if (!state || isEmpty(state)) {
+  console.error(`
+Nothing was captured - no cookies and no localStorage - so the sign-in did not
+complete. Nothing was written.` + (how === "closed"
+    ? `\nThe browser was closed before any session appeared. Run it again and
+finish signing in; closing the window once you are in is enough to save it.`
+    : `\nRun it again and finish signing in before pressing Enter.`));
+  try { await browser.close(); } catch { /* already gone */ }
   process.exit(1);
 }
 
 await mkdir(dirname(out), { recursive: true });
-const state = await context.storageState({ path: out });
-await browser.close();
-
-if (isEmpty(state)) {
-  await rm(out, { force: true });
-  console.error(`
-Nothing was captured - no cookies and no localStorage - so the sign-in did not
-complete. Nothing was written. Run it again and finish signing in before
-pressing Enter.`);
-  process.exit(1);
-}
+await writeFile(out, JSON.stringify(state, null, 2), "utf8");
+try { await browser.close(); } catch { /* already gone */ }
+console.log(how === "closed"
+  ? "\n  (saved from the state held when you closed the window)"
+  : "");
 
 const summary = summarise(state);
 const bytes = (await stat(out)).size;

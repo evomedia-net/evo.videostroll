@@ -4,12 +4,13 @@
  *
  *   npm run login -- https://app.example.com
  *   npm run login -- https://app.example.com --out auth/staging.storage-state.json
+ *   npm run login -- https://app.example.com --browser msedge
  *   npm run login -- --check auth/app.example.com.storage-state.json
  *
- * A real browser window opens. You sign in - with a password manager, a second
- * factor, an SSO redirect, whatever the site asks. Nothing types on your
- * behalf and nothing reads what you typed. When you are done you press Enter
- * here and Playwright writes the cookies and localStorage to a file.
+ * A real browser window opens. You sign in - password manager, second factor,
+ * SSO, whatever the site asks. Nothing types on your behalf and nothing reads
+ * what you typed. Press Enter here (or close the window) and the cookies and
+ * localStorage are written to a file.
  *
  * Point a storyboard at that file with `storageState`, or pass it to
  * videostroll_start. The agent gets a path; it never gets a credential.
@@ -17,10 +18,10 @@
  * The file is a live session. It is written only where git ignores it, it is
  * never printed, and it should be deleted when you are finished with it.
  */
-import { createInterface } from "node:readline";
-import { readFile, stat } from "node:fs/promises";
-import { mkdir } from "node:fs/promises";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { checkPath, defaultOutPath, describe, isEmpty, summarise } from "../dist/auth.js";
@@ -28,17 +29,56 @@ import { checkPath, defaultOutPath, describe, isEmpty, summarise } from "../dist
 const REPO = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const argv = process.argv.slice(2);
 
+// ── a transcript of every run ────────────────────────────────────────────────
+//
+// The interesting failures happen on somebody else's terminal, where "it did
+// not work" is all that comes back. Written beside the output, so it is
+// gitignored with it.
+const LOG = resolve(REPO, "auth", "login-last-run.log");
+const transcript = [];
+for (const stream of ["log", "error"]) {
+  const original = console[stream].bind(console);
+  console[stream] = (...args) => {
+    transcript.push(args.map(String).join(" "));
+    original(...args);
+  };
+}
+process.on("exit", (code) => {
+  try {
+    mkdirSync(dirname(LOG), { recursive: true });
+    const lines = ["# " + new Date().toISOString() + "  exit " + code,
+                   "# argv: " + argv.join(" "), ""].concat(transcript, [""]);
+    writeFileSync(LOG, lines.join("\n"), "utf8");
+  } catch (e) {
+    // A convenience, never a reason to fail - but it says why, because an
+    // empty catch here hid a missing import and the log simply never appeared.
+    process.stderr.write("  (could not write the run log: " + ((e && e.message) || e) + ")\n");
+  }
+});
+
+// Anything thrown from the top level would otherwise print a stack trace and a
+// bare `log: []` at somebody who only wanted to sign in.
+process.on("uncaughtException", (e) => {
+  console.error("\nSomething went wrong before the session could be saved:\n");
+  console.error("  " + String((e && e.stack) || e).split("\n").slice(0, 4).join("\n  ") + "\n");
+  process.exit(1);
+});
+
 function usage(message) {
   if (message) console.error(`\n${message}`);
   console.error(`
 Usage:
   npm run login -- <url> [--out <file>]     sign in and save the session
+  npm run login -- <url> --browser <name>   chrome | msedge | chromium
   npm run login -- --check <file>           report what a saved session holds
 
 The output defaults to auth/<host>.storage-state.json, which this repo ignores.
 Paths are relative to the repository root, not to wherever you ran npm.
-The window opens in the Chrome or Edge you already have (your password
-manager and passkeys are there). --browser chrome|msedge|chromium overrides.
+
+The window opens in the Chrome or Edge already installed, falling back to
+Playwright's bundled Chromium. Note that Playwright always uses a FRESH
+profile, so your saved passwords and extensions are not there - you will be
+typing the credentials yourself either way.
 `);
   process.exit(message ? 1 : 0);
 }
@@ -68,8 +108,9 @@ if (checkAt !== -1) {
   process.exit(0);
 }
 
-// ── capture ─────────────────────────────────────────────────────────────────
-const url = argv.find((a) => !a.startsWith("--") && argv[argv.indexOf(a) - 1] !== "--out");
+// ── where it is going ───────────────────────────────────────────────────────
+const url = argv.find((a) => !a.startsWith("--") && argv[argv.indexOf(a) - 1] !== "--out"
+  && argv[argv.indexOf(a) - 1] !== "--browser");
 if (!url) usage("Give the URL of the page to sign in on.");
 try {
   new URL(url);
@@ -88,35 +129,20 @@ if (!verdict.ok) {
 }
 const out = verdict.path;
 
-console.log(`\nOpening a browser at ${url}`);
-console.log(`Sign in in that window. Nothing is typed for you and nothing reads what you type.`);
-
-// A headed browser is the whole point of this script, and it is the one
-// Playwright install people skip: recording runs headless, which uses a
-// SEPARATE chromium-headless-shell build, so a machine can record for weeks
-// and still have no real browser. Playwright's own message is good; wrapping
-// it stops an uncaught exception dumping a stack trace and an empty `log: []`
-// at somebody who just wanted to sign in.
-// Which browser opens the window.
+// ── the window ──────────────────────────────────────────────────────────────
 //
-// Default: the Chrome or Edge already on the machine. For a human sign-in that
-// is the better browser anyway - it has your password manager, your passkeys
-// and your existing sessions, and the whole point of this script is that YOU
-// do the signing in. Playwright's bundled Chromium has none of that.
-//
-// It is also more robust. Recording runs headless, which uses a separate
-// chromium-headless-shell build, so a machine can record for weeks with no
-// working full Chromium and nobody notices until they try to sign in - which
-// is exactly what happened here: the bundled chrome.exe was present, complete
-// and readable from two other shells, and Playwright still would not launch it.
-// Falling back to a browser the OS installed sidesteps that entirely.
+// Chrome or Edge first, bundled Chromium last. Not for the profile - Playwright
+// always uses a fresh one - but because the bundled build is the one that rots:
+// recording runs headless, which uses a SEPARATE chromium-headless-shell, so a
+// machine can record for weeks with a broken full Chromium and nobody finds out
+// until they try to sign in. That is exactly what happened here; the bundled
+// chrome.exe was present, complete and readable, and still would not launch,
+// while the installed Chrome did.
 const CHANNELS = ["chrome", "msedge"];
-const wanted = (() => {
-  const at = argv.indexOf("--browser");
-  return at === -1 ? null : argv[at + 1];
-})();
+const wantedAt = argv.indexOf("--browser");
+const wanted = wantedAt === -1 ? null : argv[wantedAt + 1];
 
-async function open() {
+async function openBrowser() {
   if (wanted === "chromium") return { browser: await chromium.launch({ headless: false }), via: "bundled Chromium" };
   if (wanted) return { browser: await chromium.launch({ headless: false, channel: wanted }), via: wanted };
   const errors = [];
@@ -131,26 +157,27 @@ async function open() {
     return { browser: await chromium.launch({ headless: false }), via: "bundled Chromium" };
   } catch (e) {
     errors.push(`chromium: ${String((e && e.message) || e).split("\n")[0]}`);
-    const err = new Error(errors.join("\n  "));
-    err.tried = true;
-    throw err;
+    throw new Error(errors.join("\n  "));
   }
 }
+
+console.log(`\nOpening a browser at ${url}`);
+console.log("Sign in in that window. Nothing is typed for you and nothing reads what you type.");
 
 let browser;
 let via;
 try {
-  ({ browser, via } = await open());
+  ({ browser, via } = await openBrowser());
 } catch (e) {
   const msg = String((e && e.message) || e);
   console.error(["", "Could not open a browser window. Tried:", "", "  " + msg, ""].join("\n"));
   if (/Executable doesn't exist|playwright install|channel/i.test(msg)) {
     console.error([
-      "Install one of them, or repair Playwright's own:",
+      "Install one, or repair Playwright's own:",
       "",
       "  cd server && npx playwright install --force chromium",
       "",
-      "Or name a browser explicitly:",
+      "Or name one explicitly:",
       "",
       "  npm run login -- <url> --browser chrome     (or msedge, or chromium)",
       "",
@@ -166,22 +193,23 @@ try {
   process.exit(1);
 }
 console.log(`  (using ${via})`);
+
 const context = await browser.newContext();
 const page = await context.newPage();
 await page.goto(url, { waitUntil: "load" }).catch((e) => {
   console.error(`\nCould not open ${url}: ${e.message}`);
 });
 
-// Enter in this terminal is the signal. If stdin is not a terminal - a pipe, a
-// CI runner - there is nobody to press it, so closing the window is the signal
-// instead. Whichever happens first wins; the other is cleaned up.
-// Whichever way you finish, the session is kept.
+// ── waiting for you ─────────────────────────────────────────────────────────
 //
-// storageState() cannot be read once the browser is gone, so a snapshot is
-// taken every couple of seconds while it is alive and the newest non-empty one
-// is held. Before this, closing the window - the natural "I'm done" gesture,
-// and the ONLY signal available when stdin is not a terminal - hit an abort
-// path and threw away a completed sign-in.
+// Enter in this terminal is the signal, and reads the session live. Closing the
+// window is the only signal available when stdin is not a terminal, and
+// storageState() cannot be read once the browser is gone - so a snapshot is
+// taken every second while it is alive and the newest non-empty one is kept.
+//
+// A snapshot is a fallback, not a preference: it can be up to a second old, and
+// an early one captured the state from BEFORE a sign-in completed, which then
+// looked exactly like a saved session and was not one. Press Enter if you can.
 let snapshot = null;
 const poll = setInterval(async () => {
   try {
@@ -190,7 +218,7 @@ const poll = setInterval(async () => {
   } catch {
     /* the browser is closing; the last snapshot stands */
   }
-}, 2000);
+}, 1000);
 
 const closed = new Promise((r) => browser.on("disconnected", () => r("closed")));
 let rl;
@@ -209,52 +237,50 @@ const how = await Promise.race([pressed, closed]);
 rl?.close();
 clearInterval(poll);
 
-// Enter, with the browser still up: read it fresh. Closed: the last snapshot.
 let state = snapshot;
+let landedOn = url;
 if (how === "pressed") {
   try {
     state = await context.storageState();
+    landedOn = page.url() || url;
   } catch {
     /* fall back to the snapshot */
   }
 }
+try {
+  await browser.close();
+} catch {
+  /* already gone */
+}
 
 if (!state || isEmpty(state)) {
-  console.error(`
-Nothing was captured - no cookies and no localStorage - so the sign-in did not
-complete. Nothing was written.` + (how === "closed"
-    ? `\nThe browser was closed before any session appeared. Run it again and
-finish signing in; closing the window once you are in is enough to save it.`
-    : `\nRun it again and finish signing in before pressing Enter.`));
-  try { await browser.close(); } catch { /* already gone */ }
+  console.error("\nNothing was captured - no cookies and no localStorage - so the sign-in did not complete. Nothing was written.");
+  console.error(how === "closed"
+    ? "The browser closed before any session appeared. Run it again, and press Enter in this terminal once you are inside the app.\n"
+    : "Run it again and finish signing in before pressing Enter.\n");
   process.exit(1);
 }
 
 await mkdir(dirname(out), { recursive: true });
 await writeFile(out, JSON.stringify(state, null, 2), "utf8");
-try { await browser.close(); } catch { /* already gone */ }
-console.log(how === "closed"
-  ? "\n  (saved from the state held when you closed the window)"
-  : "");
+if (how === "closed") console.log("\n  (saved from the state held when you closed the window)");
 
-// Prove it works before calling it saved.
+// ── prove it works before calling it saved ──────────────────────────────────
 //
 // A file with a session cookie in it looks identical whether the server will
-// accept that cookie or not, and "saved" was reported for a session that
-// bounced straight back to the login page - which then cost a long detour to
-// diagnose from the other end. So the state is replayed in a fresh context,
-// headless, against the same URL: if that lands on something with a password
-// field, the sign-in did not take and the file says nothing useful.
-async function verify(file, url) {
+// accept that cookie or not, and "saved" was once reported for a session that
+// bounced straight back to the login page. So the state is replayed in a fresh
+// headless context against the page the sign-in ended on: if that shows a
+// password field, the file says nothing useful.
+async function verify(file, target) {
   const probe = await chromium.launch({ headless: true });
   try {
     const ctx = await probe.newContext({ storageState: file });
-    const page = await ctx.newPage();
-    await page.goto(url, { waitUntil: "load", timeout: 45000 });
-    // Client-rendered apps need a moment before the login form exists.
-    await page.waitForTimeout(3000);
-    const bounced = await page.evaluate(() => !!document.querySelector('input[type="password"]'));
-    return { ok: !bounced, landed: page.url() };
+    const p = await ctx.newPage();
+    await p.goto(target, { waitUntil: "load", timeout: 45000 });
+    await p.waitForTimeout(3000);
+    const bounced = await p.evaluate(() => !!document.querySelector('input[type="password"]'));
+    return { ok: !bounced, landed: p.url() };
   } catch (e) {
     return { ok: null, error: String((e && e.message) || e).split("\n")[0] };
   } finally {
@@ -262,35 +288,26 @@ async function verify(file, url) {
   }
 }
 
-// Probe where you ENDED, not where you started: the login URL would show a
-// form to a signed-out browser and redirect a signed-in one, but the page you
-// finished on is the one a walkthrough will actually open.
-let landedOn = url;
-try {
-  landedOn = page.url() || url;
-} catch {
-  /* the browser is gone; the sign-in URL is the best we have */
-}
-const check = await verify(out, landedOn);
-if (check.ok === true) {
-  console.log(`  verified: replaying it reaches ${landedOn}, not a login page`);
-} else if (check.ok === false) {
-  console.error(`
-The session was saved but it does NOT work: replaying it lands on a login page
-(${check.landed}).
-
-The sign-in did not finish, or this app ties the session to more than a cookie.
-Try again and make sure you are fully inside the app - past any workspace or
-second-factor step - before pressing Enter.`);
-} else {
-  console.log(`  could not verify (${check.error}) - the file is saved either way`);
-}
-
 const summary = summarise(state);
 const bytes = (await stat(out)).size;
 console.log(`\nSaved ${out}  (${bytes} bytes)`);
 console.log(`  ${describe(summary)}`);
 console.log(`  domains: ${summary.domains.join(", ")}`);
+
+const check = await verify(out, landedOn);
+if (check.ok === true) {
+  console.log(`\n  VERIFIED - replaying it reaches ${check.landed}`);
+} else if (check.ok === false) {
+  console.error(`\n  NOT USABLE - replaying it lands on a login page (${check.landed}).
+
+  The sign-in did not finish, or this app ties the session to more than a
+  cookie. Run it again, get fully inside the app - past any workspace or
+  second-factor step - and press Enter in this terminal rather than closing
+  the window.`);
+} else {
+  console.log(`\n  could not verify (${check.error}) - the file is saved either way`);
+}
+
 console.log(`
 This file is a live session - treat it like a password. It is ignored by git.
 Use it in a storyboard:

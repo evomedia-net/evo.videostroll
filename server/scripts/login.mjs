@@ -237,6 +237,55 @@ console.log(how === "closed"
   ? "\n  (saved from the state held when you closed the window)"
   : "");
 
+// Prove it works before calling it saved.
+//
+// A file with a session cookie in it looks identical whether the server will
+// accept that cookie or not, and "saved" was reported for a session that
+// bounced straight back to the login page - which then cost a long detour to
+// diagnose from the other end. So the state is replayed in a fresh context,
+// headless, against the same URL: if that lands on something with a password
+// field, the sign-in did not take and the file says nothing useful.
+async function verify(file, url) {
+  const probe = await chromium.launch({ headless: true });
+  try {
+    const ctx = await probe.newContext({ storageState: file });
+    const page = await ctx.newPage();
+    await page.goto(url, { waitUntil: "load", timeout: 45000 });
+    // Client-rendered apps need a moment before the login form exists.
+    await page.waitForTimeout(3000);
+    const bounced = await page.evaluate(() => !!document.querySelector('input[type="password"]'));
+    return { ok: !bounced, landed: page.url() };
+  } catch (e) {
+    return { ok: null, error: String((e && e.message) || e).split("\n")[0] };
+  } finally {
+    await probe.close().catch(() => {});
+  }
+}
+
+// Probe where you ENDED, not where you started: the login URL would show a
+// form to a signed-out browser and redirect a signed-in one, but the page you
+// finished on is the one a walkthrough will actually open.
+let landedOn = url;
+try {
+  landedOn = page.url() || url;
+} catch {
+  /* the browser is gone; the sign-in URL is the best we have */
+}
+const check = await verify(out, landedOn);
+if (check.ok === true) {
+  console.log(`  verified: replaying it reaches ${landedOn}, not a login page`);
+} else if (check.ok === false) {
+  console.error(`
+The session was saved but it does NOT work: replaying it lands on a login page
+(${check.landed}).
+
+The sign-in did not finish, or this app ties the session to more than a cookie.
+Try again and make sure you are fully inside the app - past any workspace or
+second-factor step - before pressing Enter.`);
+} else {
+  console.log(`  could not verify (${check.error}) - the file is saved either way`);
+}
+
 const summary = summarise(state);
 const bytes = (await stat(out)).size;
 console.log(`\nSaved ${out}  (${bytes} bytes)`);

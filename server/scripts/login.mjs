@@ -37,6 +37,8 @@ Usage:
 
 The output defaults to auth/<host>.storage-state.json, which this repo ignores.
 Paths are relative to the repository root, not to wherever you ran npm.
+The window opens in the Chrome or Edge you already have (your password
+manager and passkeys are there). --browser chrome|msedge|chromium overrides.
 `);
   process.exit(message ? 1 : 0);
 }
@@ -95,36 +97,75 @@ console.log(`Sign in in that window. Nothing is typed for you and nothing reads 
 // and still have no real browser. Playwright's own message is good; wrapping
 // it stops an uncaught exception dumping a stack trace and an empty `log: []`
 // at somebody who just wanted to sign in.
+// Which browser opens the window.
+//
+// Default: the Chrome or Edge already on the machine. For a human sign-in that
+// is the better browser anyway - it has your password manager, your passkeys
+// and your existing sessions, and the whole point of this script is that YOU
+// do the signing in. Playwright's bundled Chromium has none of that.
+//
+// It is also more robust. Recording runs headless, which uses a separate
+// chromium-headless-shell build, so a machine can record for weeks with no
+// working full Chromium and nobody notices until they try to sign in - which
+// is exactly what happened here: the bundled chrome.exe was present, complete
+// and readable from two other shells, and Playwright still would not launch it.
+// Falling back to a browser the OS installed sidesteps that entirely.
+const CHANNELS = ["chrome", "msedge"];
+const wanted = (() => {
+  const at = argv.indexOf("--browser");
+  return at === -1 ? null : argv[at + 1];
+})();
+
+async function open() {
+  if (wanted === "chromium") return { browser: await chromium.launch({ headless: false }), via: "bundled Chromium" };
+  if (wanted) return { browser: await chromium.launch({ headless: false, channel: wanted }), via: wanted };
+  const errors = [];
+  for (const channel of CHANNELS) {
+    try {
+      return { browser: await chromium.launch({ headless: false, channel }), via: channel };
+    } catch (e) {
+      errors.push(`${channel}: ${String((e && e.message) || e).split("\n")[0]}`);
+    }
+  }
+  try {
+    return { browser: await chromium.launch({ headless: false }), via: "bundled Chromium" };
+  } catch (e) {
+    errors.push(`chromium: ${String((e && e.message) || e).split("\n")[0]}`);
+    const err = new Error(errors.join("\n  "));
+    err.tried = true;
+    throw err;
+  }
+}
+
 let browser;
+let via;
 try {
-  browser = await chromium.launch({ headless: false });
+  ({ browser, via } = await open());
 } catch (e) {
-  // A headed browser is the whole point of this script, and it is the one
-  // Playwright install people skip: recording runs headless, which uses a
-  // SEPARATE chromium-headless-shell build, so a machine can record for weeks
-  // and still have no real browser. Playwright's own message is good; this
-  // stops an uncaught exception dumping a stack trace and an empty `log: []`
-  // at somebody who only wanted to sign in.
   const msg = String((e && e.message) || e);
-  const first = msg.split("\n")[0];
-  const advice = /Executable doesn't exist|playwright install/i.test(msg)
-    ? [
-        "This needs the FULL Chromium, not the headless shell that recording uses:",
-        "",
-        "  cd server && npx playwright install chromium",
-        "",
-        "If it is already installed, check whether this shell points elsewhere:",
-        "",
-        "  PowerShell:  $env:PLAYWRIGHT_BROWSERS_PATH",
-      ]
-    : [
-        "If this shell has no desktop session - SSH, a CI runner, an agent's",
-        "shell - it cannot open a window. Run it from a terminal on the machine",
-        "you are sitting at. That is deliberate: nothing signs in for you.",
-      ];
-  console.error(["", "Could not open a browser window.", "", "  " + first, ""].concat(advice, [""]).join("\n"));
+  console.error(["", "Could not open a browser window. Tried:", "", "  " + msg, ""].join("\n"));
+  if (/Executable doesn't exist|playwright install|channel/i.test(msg)) {
+    console.error([
+      "Install one of them, or repair Playwright's own:",
+      "",
+      "  cd server && npx playwright install --force chromium",
+      "",
+      "Or name a browser explicitly:",
+      "",
+      "  npm run login -- <url> --browser chrome     (or msedge, or chromium)",
+      "",
+    ].join("\n"));
+  } else {
+    console.error([
+      "If this shell has no desktop session - SSH, a CI runner, an agent's",
+      "shell - it cannot open a window. Run it from a terminal on the machine",
+      "you are sitting at. That is deliberate: nothing signs in for you.",
+      "",
+    ].join("\n"));
+  }
   process.exit(1);
 }
+console.log(`  (using ${via})`);
 const context = await browser.newContext();
 const page = await context.newPage();
 await page.goto(url, { waitUntil: "load" }).catch((e) => {

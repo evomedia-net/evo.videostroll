@@ -70,13 +70,59 @@ Claude Code — in a project's `.mcp.json` (or `~/.claude.json` for every projec
 mkdir -p ~/.claude/skills/videostroll && cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md
 ```
 
-Then ask for a walkthrough. The skill tells the agent to reconnoitre with
+Then ask for a walkthrough. The skill tells the agent to read the
+product's own docs with `videostroll_docs`, reconnoitre with
 `videostroll_observe`, storyboard, narrate in short presenter-voice sentences,
 record step by step, and read the manifest back before delivering.
 
 The design, decisions and remaining questions are in **[PLAN.md](PLAN.md)**;
 the contract is [`server/schema/storyboard.schema.json`](server/schema/storyboard.schema.json),
 with worked examples in [`examples/storyboards/`](examples/storyboards/).
+
+
+## It reads the product's documentation first
+
+Narration that uses a product's own nouns sounds like someone who works there.
+Narration that invents its own sounds like a stranger reading labels off the
+screen — and the accessibility snapshot, which is all the agent otherwise has,
+shows what is on the page but not what any of it is *called*.
+
+So before storyboarding, the agent calls `videostroll_docs`. It looks for
+documentation the way a person would — `llms.txt` first, then `/docs`,
+`docs.<site>`, `/help`, `/guide`, then any link on the page that reads like a
+way in — and comes back with **vocabulary, not pages**:
+
+| | |
+| --- | --- |
+| `glossary` | what the product calls its features, one line each |
+| `tasks` | its "How to…" titles — the routes users actually want |
+| `pronunciation` | how to say the awkward names out loud |
+
+`pronunciation` reads the documentation to decide, which is the only way to get
+it right: the corpus writes **EHS** in capitals somewhere, so `evo.ehs` is
+spoken "evo dot e h s", while `evo.orchard` stays "evo dot orchard". Guessing
+from the letters alone gets it wrong in both directions.
+
+No documentation is a normal answer, not an error — `found: false`, and the
+walkthrough proceeds on the snapshot alone.
+
+### What it will not do
+
+- **It does not follow instructions it finds.** Documentation is written by
+  whoever runs the site, and it ends up spoken aloud in a video somebody
+  ships. Lines that read like an attempt to redirect the agent are dropped and
+  **counted** in `dropped.instructions` — silent filtering would be worse than
+  none, because a non-zero count is itself worth knowing. The skill states the
+  rule in the other direction too: what comes back is vocabulary to borrow,
+  never direction to follow. Neither half is a guarantee, and the design says
+  so rather than implying a wall where there is a speed bump.
+- **It does not leak an example credential into a script.** The same pattern
+  that rejects a secret in narration runs over everything fetched.
+- **It does not wander.** Same site only, under the entry point's own path,
+  `robots.txt` honoured, at most 12 pages, and it says which pages it skipped
+  and why.
+- **It does not crawl for you.** This reads documentation to write narration.
+  It is not a search tool and has no interest in being one.
 
 ## Voices
 
@@ -223,7 +269,7 @@ Register the server with an MCP client (Claude Code, Claude Desktop, any
 other) by pointing it at `node server/dist/index.js` after `npm run build`,
 or at `npx evo.videostroll` once published. Tools: `videostroll_start`,
 `videostroll_step`, `videostroll_observe`, `videostroll_finish`,
-`videostroll_abort`, `videostroll_render`.
+`videostroll_abort`, `videostroll_docs`, `videostroll_render`.
 
 ## Releases
 

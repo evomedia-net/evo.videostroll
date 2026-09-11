@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /docs/internal/
+
+User-agent: BadBot
+Disallow: /

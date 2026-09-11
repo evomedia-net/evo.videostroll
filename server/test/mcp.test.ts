@@ -44,10 +44,10 @@ afterAll(async () => {
 });
 
 describe("MCP server over stdio", () => {
-  it("exposes the six tools with descriptions", async () => {
+  it("exposes the seven tools with descriptions", async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
-    expect(names).toEqual(["videostroll_abort", "videostroll_finish", "videostroll_observe", "videostroll_render", "videostroll_start", "videostroll_step"]);
+    expect(names).toEqual(["videostroll_abort", "videostroll_docs", "videostroll_finish", "videostroll_observe", "videostroll_render", "videostroll_start", "videostroll_step"]);
     for (const t of tools) expect(t.description, t.name).toBeTruthy();
   });
 

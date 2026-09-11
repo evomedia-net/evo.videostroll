@@ -8,7 +8,16 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "fixture");
-const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript" };
+const TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css",
+  ".js": "text/javascript",
+  // The docs fixture serves llms.txt and robots.txt, and a docs scan refuses
+  // anything that is not text - so the type has to be right here or the test
+  // passes for the wrong reason.
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml",
+};
 
 export interface Fixture {
   url: string;

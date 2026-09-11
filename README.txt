@@ -209,6 +209,45 @@ or at npx evo.videostroll once published. Tools: videostroll_start,
 videostroll_step, videostroll_observe, videostroll_finish,
 videostroll_abort, videostroll_render.
 
+Releases
+--------
+
+Every build is packaged as a zip under releases/, named for its version, with
+two independent integrity layers:
+
+    evo.videostroll-<version>.zip.sha256   verifies the download arrived intact
+    CHECKSUMS.txt inside the zip           verifies the files after extracting
+
+    sha256sum -c evo.videostroll-<version>.zip.sha256   # before unzipping
+    unzip evo.videostroll-<version>.zip -d videostroll
+    cd videostroll && sha256sum -c CHECKSUMS.txt        # after
+
+Both are integrity checks, not signatures: the manifest travels in the same
+archive as the files, so whoever can change one can change the other. They
+catch a truncated download, a corrupted mirror and an accidental edit - not a
+determined forger.
+
+Building one
+~~~~~~~~~~~~
+
+    cd server && npm run release
+
+What goes in is whatever git tracks, minus releases/, auth/, node_modules and
+dist - so the archive is exactly the reviewed source and a new file cannot be
+left out by forgetting a list.
+
+It refuses to build an archive whose name would not describe its contents:
+
+  - the tree is dirty - the zip is built from working-tree files, so
+    uncommitted edits would ship inside a published release;
+  - the version is already tagged and the tree has moved past it - the
+    archive would carry contents its own name does not describe.
+
+--force overwrites an existing file; it does not license a mislabelled one,
+and neither refusal yields to it. To rebuild a release exactly as it shipped,
+check out its tag. --allow-mismatch overrides both, loudly, for the cases that
+are neither.
+
 Two deliverables, one repo
 --------------------------
 

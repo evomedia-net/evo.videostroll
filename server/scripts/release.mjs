@@ -6,6 +6,11 @@
  *   npm run release -- --force  overwrite the zip for this version
  *   npm run release -- --verify re-check the zip already on disk
  *
+ * It refuses to build an archive whose name would not describe its contents:
+ * a dirty tree, or a version already tagged while the tree has moved past it.
+ * --force overwrites a file; it does not license a mislabelled one. The way
+ * past a refusal is --allow-mismatch, which someone has to type on purpose.
+ *
  * An open-source project has to be obtainable without cloning, and checkable
  * once obtained. Two layers, on purpose:
  *
@@ -31,6 +36,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "no
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, manifest } from "../dist/zip.js";
+import { releaseGuard } from "../dist/release-guard.js";
 
 const SERVER = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const REPO = resolve(SERVER, "..");
@@ -66,6 +72,44 @@ if (verifyOnly) {
   console.error(`\n  FAILED - releases/${name} does not match its .sha256`);
   console.error(`    expected ${expected}\n    actual   ${actual}\n`);
   process.exit(1);
+}
+
+// ── would this archive tell the truth? ──────────────────────────────────────
+//
+// Runs even under --force. Overwriting a file and publishing a mislabelled one
+// are different permissions, and only the first is what --force asks for.
+const git = (...args) => execFileSync("git", args, { cwd: REPO, encoding: "utf8" });
+
+let tagExists = true;
+try {
+  git("rev-parse", "--verify", "--quiet", `refs/tags/${version}`);
+} catch {
+  tagExists = false;
+}
+
+const verdict = releaseGuard({
+  version,
+  tagExists,
+  // releases/ is excluded: the zip and digest for a version are committed
+  // AFTER its tag is laid, so they are the expected difference between the
+  // tag and HEAD, not evidence the source moved.
+  treeDiffersFromTag: tagExists
+    ? git("diff", "--name-only", version, "HEAD", "--", ".", ":(exclude)releases").trim().length > 0
+    : false,
+  dirty: git("status", "--porcelain", "--untracked-files=no")
+    .split("\n")
+    .filter((line) => line.length > 3)
+    .map((line) => line.slice(3).trim())
+    .filter((path) => !path.startsWith("releases/")),
+});
+
+if (!verdict.ok) {
+  if (!argv.includes("--allow-mismatch")) {
+    console.error(`\nRefusing to build releases/${name}: ${verdict.reason}\n`);
+    console.error("Override with --allow-mismatch if you are certain.\n");
+    process.exit(1);
+  }
+  console.error(`\n  WARNING (--allow-mismatch): ${verdict.reason}\n`);
 }
 
 if (existsSync(zipPath) && !force) {

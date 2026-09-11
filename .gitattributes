@@ -1,0 +1,14 @@
+# The release digests are consumed by sha256sum, which is line-ending sensitive:
+# a CRLF checkout makes `sha256sum -c` fail on Linux and macOS with "no properly
+# formatted checksum lines found". This repo is developed on Windows with
+# autocrlf on, so without these the file that verifies a download is itself
+# broken by the checkout.
+*.sha256        text eol=lf
+CHECKSUMS.txt   text eol=lf
+
+# Release archives are bytes; never let a line-ending filter near them.
+*.zip           binary
+
+# Captions are consumed by players and by ffmpeg's subtitles filter.
+*.srt           text eol=lf
+*.vtt           text eol=lf

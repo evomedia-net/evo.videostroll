@@ -28,6 +28,7 @@
     "voices": "node scripts/voices.mjs",
     "login": "npm run build && node scripts/login.mjs",
     "deploy:local": "node scripts/deploy-local.mjs",
+    "release": "npm run build && node scripts/release.mjs",
     "prepack": "node scripts/prepack.mjs"
   },
   "dependencies": {

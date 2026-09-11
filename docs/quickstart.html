@@ -143,8 +143,20 @@ cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
     <p>Edit it in the repository and copy it out again. Never the other way round.</p>
   </section>
 
+  <section id="current">
+    <h2><span class="n">5</span> Keeping this machine current</h2>
+    <p>There is no server to deploy to, but <strong>&ldquo;installed&rdquo; is three things</strong>, and
+      <code>git pull</code> is only the first. <code>dist/</code> is gitignored and the registered
+      server runs from it, so a pull alone leaves it on stale compiled code &mdash; and the
+      skill above is a copy, which nothing detects the drift of.</p>
+<pre>npm run deploy:local              <span class="c"># pull, rebuild, copy the skill, report</span>
+npm run deploy:local -- --check   <span class="c"># what is stale, change nothing</span></pre>
+    <p>It refuses to pull over uncommitted changes or onto a branch that is not the
+      default, and says so rather than reporting everything as current.</p>
+  </section>
+
   <section id="use">
-    <h2><span class="n">5</span> Ask for a walkthrough</h2>
+    <h2><span class="n">6</span> Ask for a walkthrough</h2>
     <p>That is the whole setup. Start a session and ask in plain words.</p>
 <pre><span class="c">"Record a two minute walkthrough of https://example.com</span>
 <span class="c"> for someone who has never seen it."</span></pre>
@@ -153,7 +165,7 @@ cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
   </section>
 
   <section id="login">
-    <h2><span class="n">6</span> Sites behind a login</h2>
+    <h2><span class="n">7</span> Sites behind a login</h2>
     <p>The recorder never types a password and a storyboard never holds one.
       <strong>You sign in yourself, once</strong>, and it keeps the session.</p>
 <pre>npm run login -- https://app.example.com</pre>
@@ -166,17 +178,21 @@ cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
     <p>That file is a live session &mdash; treat it like a password. Sessions
       expire, so check one before you rely on it.</p>
 <pre>npm run login -- --check auth/app.example.com.storage-state.json</pre>
+    <p>This is the one step that needs a <strong>full browser</strong>. Recording is
+      headless and uses a different build, so a machine can record for weeks and still
+      fail here. It opens the Chrome or Edge you already have; <code>--browser chromium</code>
+      forces Playwright&rsquo;s own. Every run leaves a log in <code>auth/</code>.</p>
   </section>
 
   <section id="batch">
-    <h2><span class="n">7</span> Or render a storyboard</h2>
+    <h2><span class="n">8</span> Or render a storyboard</h2>
     <p>Every recording also writes the storyboard that produced it. When the site changes,
       edit the steps that changed and render again. No agent needed.</p>
 <pre>npm run render -- ../examples/storyboards/example-com.json out/</pre>
   </section>
 
   <section id="output">
-    <h2><span class="n">8</span> What comes out</h2>
+    <h2><span class="n">9</span> What comes out</h2>
     <div class="grid">
       <div class="out"><b>walkthrough.mp4</b><span>1080p30, H.264 and AAC</span></div>
       <div class="out"><b>walkthrough.captioned.mp4</b><span>the same, captions burned in</span></div>
@@ -188,7 +204,7 @@ cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
   </section>
 
   <section id="voices">
-    <h2><span class="n">9</span> Voices</h2>
+    <h2><span class="n">10</span> Voices</h2>
     <p><strong>Pick one rather than guessing a name.</strong> The default provider
       offers 322 voices &mdash; 47 of them English, split almost evenly between male
       and female &mdash; each listed with its gender and character.</p>

@@ -28,10 +28,11 @@ import {
   robotsDisallows,
   sameSite,
   scrub,
+  stepCount,
   speakable,
   textOf,
 } from "../src/docs.js";
-import { type Fetcher, httpFetcher, scanDocs } from "../src/docs-scan.js";
+import { type Fetcher, browserFetcher, httpFetcher, scanDocs } from "../src/docs-scan.js";
 import { startFixture, type Fixture } from "./fixture-server.js";
 
 // ── finding ─────────────────────────────────────────────────────────────────
@@ -166,6 +167,84 @@ describe("llms.txt", () => {
     expect(isTaskTitle("How to add a user")).toBe(true);
     expect(isTaskTitle("Getting started")).toBe(true);
     expect(isTaskTitle("Work orders")).toBe(false);
+  });
+});
+
+describe("spotting a task", () => {
+  it("reads the imperative a heading usually takes", () => {
+    expect(isTaskTitle("Create a permit")).toBe(true);
+    expect(isTaskTitle("Add a user")).toBe(true);
+    expect(isTaskTitle("Set up notifications")).toBe(true);
+  });
+
+  it("handles the doubled consonant in the commonest task heading of all", () => {
+    // "set" + "ing" is "setting", not "seting".
+    expect(isTaskTitle("Setting up notifications")).toBe(true);
+  });
+
+  it("reads the gerund a contents page usually takes", () => {
+    // "create" + "ing" is not "creating"; the stem's final e is dropped, and
+    // getting that wrong silently matched nothing on a whole class of docs.
+    expect(isTaskTitle("Creating a permit")).toBe(true);
+    expect(isTaskTitle("Configuring alerts")).toBe(true);
+    expect(isTaskTitle("Scheduling a visit")).toBe(true);
+  });
+
+  it("reads the question form", () => {
+    expect(isTaskTitle("How do I add a user?")).toBe(true);
+    expect(isTaskTitle("How can I export data?")).toBe(true);
+  });
+
+  it("keeps feature nouns out, which is why the verb list is short", () => {
+    // Each of these is a page title in real documentation, and none is a task.
+    // A false task is worse than a missing one: the agent may build the whole
+    // walkthrough around it.
+    for (const noun of ["Settings", "Logs", "Views", "Search", "Reports", "Management", "Updates", "Downloads"]) {
+      expect(isTaskTitle(noun), noun).toBe(false);
+    }
+  });
+
+  it("counts numbered steps, and ignores bullet lists", () => {
+    expect(stepCount("<ol><li>One</li><li>Two</li><li>Three</li></ol>")).toBe(3);
+    // A bullet list is as likely to be features or limits as a procedure.
+    expect(stepCount("<ul><li>One</li><li>Two</li></ul>")).toBe(0);
+    expect(stepCount("<p>No list at all.</p>")).toBe(0);
+  });
+
+  it("calls a noun-headed section a task when it has numbered steps", () => {
+    // The gap this closes: most documentation heads its pages with nouns, so
+    // title matching alone returned an empty `tasks` for exactly the sites
+    // that had the most procedures in them.
+    const d = harvest([
+      {
+        url: "https://x.test/d",
+        contentType: "text/html",
+        body:
+          "<h2>Work orders</h2><p>A work order is one visit.</p>" +
+          "<ol><li>Open the dispatch board.</li><li>Pick an unassigned order.</li><li>Assign a technician.</li></ol>",
+      },
+    ]);
+    expect(d.tasks).toEqual([{ title: "Work orders", url: "https://x.test/d", steps: 3 }]);
+    // And it is still a glossary term - it is both.
+    expect(d.glossary.map((t) => t.term)).toEqual(["Work orders"]);
+  });
+
+  it("leaves a noun-headed section alone when there is no procedure under it", () => {
+    const d = harvest([
+      { url: "https://x.test/d", contentType: "text/html", body: "<h2>Work orders</h2><p>A work order is one visit.</p>" },
+    ]);
+    expect(d.tasks).toEqual([]);
+  });
+
+  it("needs more than one step, so a single ordered item is not a procedure", () => {
+    const d = harvest([
+      {
+        url: "https://x.test/d",
+        contentType: "text/html",
+        body: "<h2>Permits</h2><p>What they are.</p><ol><li>Only one thing.</li></ol>",
+      },
+    ]);
+    expect(d.tasks).toEqual([]);
   });
 });
 
@@ -388,6 +467,38 @@ function stub(pages: Record<string, { contentType?: string; body: string }>): Fe
     },
   };
 }
+
+describe("a 404 is not documentation", () => {
+  it("does not accept a soft 404 as the entry point, and keeps looking", async () => {
+    // Found on a real site: /llms.txt did not exist, the host answered with a
+    // branded 404, and the scan called it the docs index - reporting
+    // `discovered: "llms.txt"` about a file that was not there, and crawling
+    // the error page's nav links instead of the documentation.
+    const site = stub({
+      "https://x.test/llms.txt": { body: "<h1>Page not found</h1><p>It has moved.</p>" },
+      "https://x.test/docs/": { body: "<h2>Widget</h2><p>A widget is a thing.</p>" },
+    });
+    const r = await scanDocs({ url: "https://x.test/app" }, site);
+    expect(r.discovered).toBe("conventional path");
+    expect(r.entry).toBe("https://x.test/docs/");
+    expect(r.glossary.map((t) => t.term)).toEqual(["Widget"]);
+  });
+
+  it("the browser fallback checks the status, which is how the 404 got in", async () => {
+    // page.goto() resolves happily on a 404 - the page loaded, it just is not
+    // the page asked for. The plain fetcher had always checked; only the
+    // browser path was credulous, so this asserts against a real browser.
+    const fixture = await startFixture();
+    const fetcher = browserFetcher();
+    try {
+      expect(await fetcher.render!(`${fixture.url}no-such-page.html`)).toBeNull();
+      expect(await fetcher.render!(`${fixture.url}page2.html`)).not.toBeNull();
+    } finally {
+      await fetcher.close();
+      await fixture.close();
+    }
+  });
+});
 
 describe("discovery", () => {
   it("falls back to a conventional path when there is no llms.txt", async () => {

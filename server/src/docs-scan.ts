@@ -25,8 +25,11 @@ import {
   type FetchedPage,
   candidates,
   harvest,
+  headings,
   isDocsLink,
   links,
+  looksMissing,
+  llmsLinks,
   needsBrowser,
   robotsAllows,
   robotsDisallows,
@@ -114,7 +117,14 @@ export function browserFetcher(storageState?: string): Fetcher & { close(): Prom
       const context = await browser.newContext({ storageState, userAgent: USER_AGENT });
       try {
         const page = await context.newPage();
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: BUDGET.timeoutMs });
+        const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: BUDGET.timeoutMs });
+        // goto() resolves happily on a 404 - the page loaded, it just is not
+        // the page asked for. Without this the branded 404 of a site with no
+        // llms.txt became the docs entry point, and the scan reported
+        // `discovered: "llms.txt"` about a file that does not exist. Found on
+        // a real site; the plain fetcher had always checked, and only the
+        // browser path was credulous.
+        if (response && !response.ok()) return null;
         // Client-rendered docs paint after the first network settle; a short
         // wait is the difference between a shell and the page. Bounded, and a
         // timeout here is not a failure - whatever has rendered is returned.
@@ -160,6 +170,19 @@ async function read(url: string, fetcher: Fetcher): Promise<FetchedPage | null> 
 }
 
 /**
+ * A page that is really the page asked for.
+ *
+ * Belt and braces beside the status check: plenty of sites answer a missing
+ * page with 200 and a "Page not found" template, and accepting one as the docs
+ * entry point sends the whole crawl off the nav links of an error page.
+ */
+function usable(page: FetchedPage | null): FetchedPage | null {
+  if (!page || !page.body.trim()) return null;
+  if (/html/i.test(page.contentType) && looksMissing(headings(page.body).map((h) => h.text))) return null;
+  return page;
+}
+
+/**
  * Find the documentation for a site and come back with its vocabulary.
  *
  * Never throws for the ordinary outcome. A site with no documentation is the
@@ -201,13 +224,13 @@ export async function scanDocs(opts: ScanOptions, fetcher: Fetcher): Promise<Sca
 
   if (opts.docsUrl) {
     if (!permitted(opts.docsUrl)) return empty("given");
-    entry = await read(opts.docsUrl, fetcher);
+    entry = usable(await read(opts.docsUrl, fetcher));
     discovered = "given";
   } else {
     for (const candidate of candidates(opts.url)) {
       if (!permitted(candidate)) continue;
-      const page = await read(candidate, fetcher);
-      if (page && page.body.trim()) {
+      const page = usable(await read(candidate, fetcher));
+      if (page) {
         entry = page;
         discovered = /llms\.txt$/i.test(candidate) ? "llms.txt" : "conventional path";
         break;
@@ -220,7 +243,7 @@ export async function scanDocs(opts: ScanOptions, fetcher: Fetcher): Promise<Sca
         ? links(home.body, home.url).find((l) => isDocsLink(l.href, l.text) && sameSite(l.href, opts.url))
         : undefined;
       if (target && permitted(target.href)) {
-        entry = await read(target.href, fetcher);
+        entry = usable(await read(target.href, fetcher));
         discovered = "link on the page";
       }
     }
@@ -232,21 +255,26 @@ export async function scanDocs(opts: ScanOptions, fetcher: Fetcher): Promise<Sca
   const pages: FetchedPage[] = [entry];
   const seen = new Set([entry.url]);
 
-  if (/html/i.test(entry.contentType)) {
-    for (const link of links(entry.body, entry.url)) {
-      if (pages.length >= maxPages) break;
-      const href = link.href.split("#")[0];
-      if (seen.has(href) || !sameSite(href, entry.url)) continue;
-      // Stay under the entry point's own path. A docs index usually links to
-      // the marketing site, the blog and a pricing page as well, and none of
-      // those teach the agent what anything is called.
-      if (!underSamePath(href, entry.url) && !isDocsLink(href, link.text)) continue;
-      seen.add(href);
-      if (!permitted(href)) continue;
-      const page = await read(href, fetcher);
-      if (page) pages.push(page);
-      else skipped.push({ url: href, reason: "not readable as text" });
-    }
+  // An HTML page is crawled by its anchors; an llms.txt by the index it is.
+  // Both are followed, because llms.txt exists to be followed - stopping at the
+  // file gets a one-line description of every page and the contents of none.
+  const frontier = /html/i.test(entry.contentType)
+    ? links(entry.body, entry.url)
+    : llmsLinks(entry.body, entry.url);
+
+  for (const link of frontier) {
+    if (pages.length >= maxPages) break;
+    const href = link.href.split("#")[0];
+    if (seen.has(href) || !sameSite(href, entry.url)) continue;
+    // Stay under the entry point's own path. A docs index usually links to the
+    // marketing site, the blog and a pricing page as well, and none of those
+    // teach the agent what anything is called.
+    if (!underSamePath(href, entry.url) && !isDocsLink(href, link.text)) continue;
+    seen.add(href);
+    if (!permitted(href)) continue;
+    const page = await read(href, fetcher);
+    if (page) pages.push(page);
+    else skipped.push({ url: href, reason: "not readable as text" });
   }
 
   const digest = harvest(pages);

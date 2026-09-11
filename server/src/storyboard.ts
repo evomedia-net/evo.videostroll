@@ -83,7 +83,7 @@ export const ViewportSchema = z.strictObject({
  * per-step override can each apply their own rule to them.
  */
 const voiceFields = {
-  provider: z.enum(["edge", "piper", "openai", "elevenlabs", "silent"]),
+  provider: z.enum(["edge", "piper", "silent"]),
   name: z.string(),
   rate: z.number().min(0.5).max(2),
   wordsPerMinute: z.number().int().min(60).max(300),

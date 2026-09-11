@@ -44,9 +44,6 @@ export function getProvider(voice: Voice): TtsProvider {
       return new EdgeProvider();
     case "piper":
       return new PiperProvider();
-    case "openai":
-    case "elevenlabs":
-      throw new Error(`voice.provider '${voice.provider}' is not implemented yet. Available: edge (default, network), piper (offline), silent.`);
   }
 }
 

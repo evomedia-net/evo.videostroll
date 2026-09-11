@@ -64,8 +64,6 @@
           "enum": [
             "edge",
             "piper",
-            "openai",
-            "elevenlabs",
             "silent"
           ],
           "default": "edge"
@@ -453,8 +451,6 @@
           "enum": [
             "edge",
             "piper",
-            "openai",
-            "elevenlabs",
             "silent"
           ]
         },

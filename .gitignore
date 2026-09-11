@@ -47,3 +47,9 @@ Thumbs.db
 # Coverage
 coverage/
 .nyc_output/
+
+# Copied into the package root by server/scripts/prepack.mjs so the
+# published tarball carries them - `files` cannot reach above the package
+# root. Generated at pack time; the originals live at the repository root.
+server/README.md
+server/LICENSE

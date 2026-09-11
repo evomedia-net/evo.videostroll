@@ -1,0 +1,14 @@
+# Orchard
+
+> Orchard is a field-service scheduler for small teams.
+
+## Docs
+
+- [Work orders](/docs/work-orders.html): A work order is one visit to one site, with the parts and the technician assigned to it.
+- [Dispatch board](/docs/dispatch.html): The dispatch board shows every unassigned work order for the day.
+- [How to schedule a visit](/docs/schedule.html): Assign a technician and a time window to an open work order.
+- **SLA** — the response time promised to a customer for a given severity.
+
+## Optional
+
+- [Changelog](/docs/changelog.html)

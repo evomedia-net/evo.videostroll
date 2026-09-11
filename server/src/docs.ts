@@ -54,6 +54,8 @@ export interface Term {
 export interface Task {
   title: string;
   url: string;
+  /** Numbered steps found under the heading, when the page had any. */
+  steps?: number;
 }
 
 export interface Pronunciation {
@@ -233,6 +235,11 @@ export interface Heading {
   text: string;
   /** The prose between this heading and the next. */
   body: string;
+  /**
+   * Numbered steps in this section. The giveaway that a section is a
+   * procedure regardless of what it is called - see stepCount.
+   */
+  steps: number;
 }
 
 const entities: Record<string, string> = {
@@ -274,11 +281,30 @@ export function headings(html: string): Heading[] {
     const text = tidy(textOf(m[2]));
     if (text) found.push({ level: Number(m[1]), text, at: m.index, end: re.lastIndex });
   }
-  return found.map((h, i) => ({
-    level: h.level,
-    text: h.text,
-    body: textOf(clean.slice(h.end, found[i + 1]?.at ?? clean.length)),
-  }));
+  return found.map((h, i) => {
+    const section = clean.slice(h.end, found[i + 1]?.at ?? clean.length);
+    return { level: h.level, text: h.text, body: textOf(section), steps: stepCount(section) };
+  });
+}
+
+/**
+ * How many numbered steps a section contains.
+ *
+ * This is what rescues documentation whose headings are all nouns, which is
+ * most documentation: "Work orders" with a numbered procedure under it IS a
+ * task, and no amount of vocabulary matching on the title will ever say so.
+ *
+ * `<ol>` only, never `<ul>`. An unordered list is as likely to be a list of
+ * features or limits as a procedure, and counting it would fill `tasks` with
+ * things that are not tasks - which is worse than leaving it empty, because
+ * the agent would follow them.
+ */
+export function stepCount(html: string): number {
+  let steps = 0;
+  for (const m of html.matchAll(/<ol\b[^>]*>([\s\S]*?)<\/ol>/gi)) {
+    steps = Math.max(steps, (m[1].match(/<li\b/gi) ?? []).length);
+  }
+  return steps;
 }
 
 /** Every resolvable href in a page, with the text a person would click. */
@@ -306,6 +332,26 @@ export function links(html: string, base: string): { href: string; text: string 
  * after the colon is already the one-line gloss everything else has to guess
  * at.
  */
+/**
+ * Every page an llms.txt points at.
+ *
+ * llms.txt is an INDEX, and an index is only useful if something follows it.
+ * Reading the file and stopping there yields the one-line description of each
+ * page and none of their contents - which is how a site with a perfectly good
+ * llms.txt returned an empty `tasks`: the procedures were all one hop away.
+ */
+export function llmsLinks(text: string, base: string): { href: string; text: string }[] {
+  const out: { href: string; text: string }[] = [];
+  for (const m of text.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)) {
+    try {
+      out.push({ href: new URL(m[2], base).toString(), text: m[1].trim() });
+    } catch {
+      /* a relative link with no usable base is not worth failing over */
+    }
+  }
+  return out;
+}
+
 export function parseLlmsTxt(text: string, from: string): { terms: Term[]; tasks: Task[] } {
   const terms: Term[] = [];
   const tasks: Task[] = [];
@@ -332,7 +378,56 @@ export function parseLlmsTxt(text: string, from: string): { terms: Term[]; tasks
 
 // ── turning pages into vocabulary ───────────────────────────────────────────
 
-const TASK_RE = /^(how\s+to\b|creating\b|adding\b|setting\s+up\b|configuring\b|managing\b|getting\s+started\b|installing\b|import|export)/i;
+/**
+ * The verbs documentation uses when it is telling you to do something.
+ *
+ * Matched in both the imperative a heading usually takes ("Create a permit")
+ * and the gerund a contents page usually takes ("Creating a permit"), which is
+ * why the stems are listed once and the endings are the regex's problem. Word
+ * boundaries keep the nouns out: `^set\b` does not match "Settings", `^manage\b`
+ * does not match "Management".
+ */
+const TASK_VERBS = [
+  "add", "approve", "archive", "assign", "close", "configure", "connect",
+  "create", "customise", "customize", "delete", "disable", "download", "edit",
+  "enable", "export", "generate", "import", "install", "invite", "manage",
+  "migrate", "publish", "remove", "rename", "reopen", "reset", "resolve",
+  "restore", "schedule", "send", "set up", "submit", "update", "upload",
+];
+
+/**
+ * The two forms a heading actually uses: the imperative ("Create a permit")
+ * and the gerund ("Creating a permit").
+ *
+ * NOT the plural. "Creates a permit" is not a heading anyone writes, while
+ * "Updates" and "Downloads" are page titles everywhere - so accepting the "s"
+ * form bought nothing and misread two common feature pages as tasks. A test
+ * caught it.
+ *
+ * The gerund is why this is generated rather than written out, because English
+ * spells it two awkward ways: a final "e" is dropped, so "create" gives
+ * "creating"; and a short stem doubles its last consonant, so "set up" gives
+ * "setting up" - which is one of the most common task headings there is.
+ */
+function forms(verb: string): string {
+  const [head, ...rest] = verb.split(" ");
+  const tail = rest.length ? `\\s+${rest.join("\\s+")}` : "";
+  if (head.endsWith("e")) return `${head.slice(0, -1)}(?:e|ing)${tail}`;
+  const last = head.slice(-1);
+  return `${head}(?:|${last}?ing)${tail}`;
+}
+
+/**
+ * Deliberately NOT exhaustive. Verbs that are just as often feature nouns in
+ * documentation - log, view, run, search, build, share, track, find - are left
+ * out, because a false task is worse than a missing one: the agent may build a
+ * walkthrough around it. The structural signal below catches those pages
+ * anyway, and catches them on better evidence.
+ */
+const TASK_RE = new RegExp(
+  `^(how\\s+(to|do\\s+i|can\\s+i)\\b|getting\\s+started\\b|(?:${TASK_VERBS.map(forms).join("|")})\\b)`,
+  "i",
+);
 
 export function isTaskTitle(title: string): boolean {
   return TASK_RE.test(title.trim());
@@ -479,7 +574,9 @@ export function harvest(pages: FetchedPage[]): DocsDigest {
       if (heading.secrets || heading.instructions) continue;
       const gloss = firstSentence(body.text);
       if (h.level <= 3 && gloss) terms.push({ term: h.text, gloss, from: page.url });
-      if (isTaskTitle(h.text)) tasks.push({ title: h.text, url: page.url });
+      if (isTaskTitle(h.text) || h.steps >= 2) {
+        tasks.push({ title: h.text, url: page.url, ...(h.steps >= 2 ? { steps: h.steps } : {}) });
+      }
       corpus += `\n${h.text}\n${body.text}`;
     }
   }

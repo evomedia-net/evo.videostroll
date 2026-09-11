@@ -89,8 +89,16 @@ docs.<site>, /help, /guide, then any link on the page that reads like a way in
 - and comes back with vocabulary, not pages:
 
     glossary        what the product calls its features, one line each
-    tasks           its "How to..." titles - the routes users actually want
+    tasks           its procedures - the routes users actually want
     pronunciation   how to say the awkward names out loud
+
+tasks is found two ways, because titles alone were not enough. Most
+documentation heads its pages with nouns - "Work orders", not "Creating a work
+order" - so matching the title found nothing on exactly the sites with the most
+procedures in them. A section containing a numbered list is now a task whatever
+it is called, which is better evidence than the title anyway. <ol> only: a
+bullet list is as likely to be features or limits, and a false task is worse
+than a missing one because the agent may build the walkthrough around it.
 
 pronunciation reads the documentation to decide, which is the only way to get
 it right: the corpus writes EHS in capitals somewhere, so evo.ehs is spoken

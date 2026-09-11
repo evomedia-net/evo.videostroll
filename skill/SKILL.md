@@ -57,9 +57,11 @@ the documentation itself:
   and gets narrated as "account" is wrong in a way no selector check catches,
   and it is the single clearest tell that the narrator has never used the
   product.
-- **`tasks`** — the "How to…" titles. These are the routes real users care
-  about, already chosen by someone who had to think about it. A walkthrough
-  that follows one is usually the walkthrough that was wanted.
+- **`tasks`** — the product's procedures: headings that name an action, and
+  any section carrying a numbered list (`steps` says how many). These are the
+  routes real users care about, already chosen by someone who had to think
+  about it. A walkthrough that follows one is usually the walkthrough that was
+  wanted.
 - **`pronunciation`** — how to say the awkward names out loud. Apply these
   when you write the narration; see *Spell for the ear* below.
 

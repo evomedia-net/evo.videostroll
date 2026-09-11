@@ -156,7 +156,7 @@ Providers are pluggable behind one interface:
 | --- | --- | --- | --- | --- |
 | **`edge`** (Microsoft Edge neural voices) | free | high | network, no key | Word-boundary events → caption timing per word. Unofficial endpoint. |
 | **`piper`** | free | good | one ~60 MB voice model, offline | Fully local. First run downloads the voice. |
-| `openai`, `elevenlabs` | paid | high | API key | Optional. Never the default in an open-source tool. |
+| `openai`, `elevenlabs` | paid | high | API key | Considered, not built. Removed from the provider enum before going public: a name that parses and then throws is a promise the code does not keep. |
 | **`silent`** | — | — | nothing | Emits silence sized by words-per-minute. **For tests and CI**, so the suite is deterministic and offline. |
 
 **Recommended default: `edge`**, with `piper` as the offline choice. Kelly's

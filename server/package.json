@@ -10,7 +10,9 @@
   },
   "files": [
     "dist",
-    "schema"
+    "schema",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -25,7 +27,8 @@
     "docs:serve": "node scripts/serve-docs.mjs",
     "voices": "node scripts/voices.mjs",
     "login": "npm run build && node scripts/login.mjs",
-    "deploy:local": "node scripts/deploy-local.mjs"
+    "deploy:local": "node scripts/deploy-local.mjs",
+    "prepack": "node scripts/prepack.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
@@ -40,5 +43,27 @@
     "ajv-formats": "^3.0.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evomedia-net/evo.videostroll.git",
+    "directory": "server"
+  },
+  "homepage": "https://github.com/evomedia-net/evo.videostroll#readme",
+  "bugs": {
+    "url": "https://github.com/evomedia-net/evo.videostroll/issues"
+  },
+  "author": "Kelly Michels <dev@evomedia.net>",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "screen-recording",
+    "walkthrough",
+    "playwright",
+    "tts",
+    "captions",
+    "documentation",
+    "claude",
+    "agent"
+  ]
 }

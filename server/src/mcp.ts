@@ -46,7 +46,7 @@ export function createServer(): McpServer {
         viewport: z.object({ width: z.number().int().optional(), height: z.number().int().optional(), deviceScaleFactor: z.number().optional() }).optional(),
         voice: z
           .object({
-            provider: z.enum(["edge", "piper", "openai", "elevenlabs", "silent"]).optional(),
+            provider: z.enum(["edge", "piper", "silent"]).optional(),
             name: z.string().optional(),
             rate: z.number().optional(),
             wordsPerMinute: z.number().int().optional(),

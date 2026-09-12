@@ -53,3 +53,4 @@ coverage/
 # root. Generated at pack time; the originals live at the repository root.
 server/README.md
 server/LICENSE
+server/skill/

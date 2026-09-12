@@ -11,8 +11,11 @@
  * means the two files cannot be forgotten. The copies are gitignored: the
  * originals at the repository root stay canonical, and these are regenerated
  * every time, so they cannot drift.
+ *
+ * Progress goes to stderr: `npm pack --json` puts a machine-readable list on
+ * stdout, and anything printed there makes it unparseable.
  */
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -26,5 +29,20 @@ for (const name of ["README.md", "LICENSE"]) {
     process.exit(1);
   }
   copyFileSync(from, join(SERVER, name));
-  console.log(`prepack: ${name} -> package root`);
+  console.error(`prepack: ${name} -> package root`);
+}
+
+// The skill travels with the server. They are two halves of one thing - the
+// server records, the skill is the method - and a tarball with only the server
+// half installs a recorder that does not know how to make a good walkthrough.
+// `npx evo.videostroll --install-skill` puts this where Claude Code looks.
+mkdirSync(join(SERVER, "skill"), { recursive: true });
+for (const name of ["SKILL.md", "SKILL.txt"]) {
+  const from = join(REPO, "skill", name);
+  if (!existsSync(from)) {
+    console.error(`prepack: skill/${name} is missing - the package would ship a recorder with no method.`);
+    process.exit(1);
+  }
+  copyFileSync(from, join(SERVER, "skill", name));
+  console.error(`prepack: skill/${name} -> package root`);
 }

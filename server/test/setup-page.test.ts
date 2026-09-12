@@ -18,6 +18,42 @@ import { OUTPUT_NAME_RE, ViewportSchema } from "../src/storyboard.js";
 const REPO = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
 const page = async () => readFile(join(REPO, "docs", "setup.html"), "utf8");
 
+/**
+ * Every page carries the same menu.
+ *
+ * They were three pages that only sometimes linked to each other - the voices
+ * picker knew about the quickstart, the quickstart knew about nothing, and
+ * setup was reachable only if you read far enough down. A fourth page will be
+ * added one day by someone who forgets, so this asks the directory rather than
+ * a list.
+ */
+describe("every docs page has the same menu", () => {
+  const PAGES = ["quickstart", "setup", "voices"];
+  const ENTRIES = ["quickstart", "setup", "voices", "evomedia.net"];
+
+  it("there are no docs pages this test does not know about", async () => {
+    const { readdir } = await import("node:fs/promises");
+    const found = (await readdir(join(REPO, "docs")))
+      .filter((f) => f.endsWith(".html"))
+      .map((f) => f.replace(/\.html$/, ""))
+      .sort();
+    expect(found).toEqual([...PAGES].sort());
+  });
+
+  it.each(PAGES)("%s.html carries the menu, with itself marked", async (name) => {
+    const html = await readFile(join(REPO, "docs", `${name}.html`), "utf8");
+    const nav = /<nav class="pages"[\s\S]*?<\/nav>/.exec(html);
+    expect(nav, `${name}.html has no nav.pages`).not.toBeNull();
+
+    for (const entry of ENTRIES) {
+      expect(nav![0], `${name}.html is missing "${entry}"`).toContain(`>${entry}<`);
+    }
+    // The page you are on is shown but not a link to itself.
+    expect(nav![0]).toContain(`<span aria-current="page">${name}</span>`);
+    expect(nav![0]).not.toContain(`href="/${name}.html"`);
+  });
+});
+
 describe("the setup page agrees with the schema", () => {
   it("uses the same file-name pattern the server enforces", async () => {
     const html = await page();

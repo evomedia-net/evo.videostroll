@@ -23,7 +23,16 @@
   a { color: var(--accent); }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
 
-  header { border-bottom: 1px solid var(--edge); padding-bottom: 18px; }
+  header { border-bottom: 1px solid var(--edge); padding-bottom: 18px;
+           display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  header > div { flex: 1 1 24em; }
+  .home { margin-left: auto; }
+  /* The same menu on every page. The page you are on is shown but not a link:
+     a link to where you already are is a small lie, and it is the one people
+     click by accident. */
+  .pages { font-family: var(--mono); font-size: 16px; color: var(--dim); }
+  .pages [aria-current="page"] { color: var(--ink); font-weight: 600; }
+
   h1 { font-size: 28px; margin: 0; letter-spacing: -0.01em; }
   .dot { color: var(--accent); }
   header p { color: var(--dim); margin: 8px 0 0; max-width: 62em; }
@@ -93,10 +102,18 @@
 <div class="wrap">
 
   <header>
-    <h1>evo<span class="dot">.</span>videostroll — voices</h1>
-    <p>Every voice the <code>edge</code> provider can speak. Filter, hear one, then copy the
-      line into a storyboard. Same provider the recorder uses, so a preview is the real thing.
-      <a href="/quickstart.html">Back to the quickstart</a>.</p>
+    <div>
+      <h1>evo<span class="dot">.</span>videostroll — voices</h1>
+      <p>Every voice the <code>edge</code> provider can speak. Filter, hear one, then copy the
+        line into a storyboard. Same provider the recorder uses, so a preview is the real
+        thing. To use one without editing JSON, paste its name into
+        <a href="/setup.html">the setup page</a>.</p>
+    </div>
+    <span class="home"><nav class="pages" aria-label="Pages">
+      <a href="/quickstart.html">quickstart</a>
+      &middot; <a href="/setup.html">setup</a>
+      &middot; <span aria-current="page">voices</span>
+      &middot; <a href="https://evomedia.net">evomedia.net</a></nav></span>
   </header>
 
   <div class="controls">

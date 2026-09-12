@@ -44,6 +44,18 @@ describe("the docs do not restate the build number", () => {
     expect(stamp.version).toMatch(/^v\d+\.\d+\.\d+\.\d+\.\d+$/);
   });
 
+  /**
+   * The same failure, one file over. The quickstart said "68 tests" while the
+   * suite was at 193 - a number in prose that nothing regenerates, exactly
+   * like the build number this file was written for. A count is not worth
+   * restating: the reader runs the suite and sees the real one.
+   */
+  it("the quickstart does not restate a test count or a version", async () => {
+    const page = await readFile(join(REPO, "docs", "quickstart.html"), "utf8");
+    expect(page).not.toMatch(/\d+\s+tests?\b/i);
+    expect(page).not.toMatch(FIVE_SEGMENT);
+  });
+
   it("the two READMEs still agree on that line", async () => {
     // The .txt is a twin of the .md; if one is edited without the other, the
     // stage or the pointer will differ.

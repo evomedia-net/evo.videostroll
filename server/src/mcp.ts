@@ -44,6 +44,7 @@ export function createServer(): McpServer {
       inputSchema: {
         url: z.string().describe("Where the walkthrough begins"),
         title: z.string().optional(),
+        name: z.string().optional().describe("Base name for the output files. Default \"walkthrough\" gives walkthrough.mp4. A file name only, never a path."),
         viewport: z.object({ width: z.number().int().optional(), height: z.number().int().optional(), deviceScaleFactor: z.number().optional() }).optional(),
         voice: z
           .object({

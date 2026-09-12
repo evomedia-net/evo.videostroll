@@ -21,6 +21,14 @@
       "minLength": 1,
       "maxLength": 200
     },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "default": "walkthrough",
+      "description": "Base name for every output file: `walkthrough` gives walkthrough.mp4, walkthrough.srt and the rest. A file name only - a slash or a leading dot is rejected, because the value is joined onto the output directory."
+    },
     "url": {
       "type": "string",
       "format": "uri",

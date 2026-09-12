@@ -158,6 +158,22 @@ function banner() {
   }
 }
 
+/**
+ * The project's own GitHub URL, taken from package.json rather than typed
+ * here. One source of truth: if the repository ever moves, the banner follows
+ * it instead of pointing confidently at nothing.
+ */
+function repoUrl() {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    const raw = pkg.repository?.url ?? pkg.homepage ?? "";
+    const clean = raw.replace(/^git\+/, "").replace(/\.git$/, "").replace(/#.*$/, "");
+    return clean.startsWith("http") ? clean : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Green, unless the output is not a terminal or NO_COLOR asks otherwise. */
 function green(text) {
   const plain = !process.stdout.isTTY || process.env.NO_COLOR !== undefined;
@@ -174,6 +190,10 @@ server.listen(PORT, "127.0.0.1", () => {
   console.log(`docs   http://127.0.0.1:${PORT}/quickstart.html`);
   console.log(`setup  http://127.0.0.1:${PORT}/setup.html`);
   console.log(`voices http://127.0.0.1:${PORT}/voices.html`);
+  console.log("");
+  const repo = repoUrl();
+  if (repo) { console.log(`github ${repo}`); }
+  console.log("site   https://evomedia.net");
   console.log("");
   console.log("Ctrl-C to stop.");
 });

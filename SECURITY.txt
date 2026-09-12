@@ -63,11 +63,15 @@ takes a whole storyboard as input and is the obvious place for that to matter.
 Release integrity
 -----------------
 
-Every release carries a .sha256 beside the zip and a CHECKSUMS.txt inside it.
-Both are integrity checks, not signatures — the manifest travels in the same
-archive as the files, so whoever can change one can change the other. They
-catch a truncated download, a corrupted mirror and an accidental edit. They do
-not catch a forger, and this file would rather say so than imply otherwise.
+This repository does not commit release archives - npm is the distributable,
+and the registry publishes an integrity hash for the published tarball.
+
+npm run release still builds a verifiable archive on demand, with a .sha256
+beside it and a CHECKSUMS.txt inside. Both are integrity checks, not
+signatures - the manifest travels in the same archive as the files, so whoever
+can change one can change the other. They catch a truncated download, a
+corrupted mirror and an accidental edit. They do not catch a forger, and this
+file would rather say so than imply otherwise.
 
 Not a finding here
 ------------------

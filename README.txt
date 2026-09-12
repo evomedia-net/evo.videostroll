@@ -1,7 +1,7 @@
 evo.videostroll
 ===============
 
-alpha · M3: directed · MIT · the build is in build-version.json and on the latest git tag
+alpha · M4: packaged · MIT · the build is in build-version.json and on the latest git tag
 
 An open-source MCP server and Claude Code skill that lets an AI agent
 record narrated walkthrough videos of a website — driving the browser itself,
@@ -39,14 +39,21 @@ One walkthrough produces, in one output folder:
 Status
 ------
 
-M3 — an agent can drive it. The MCP server is exercised end to end by a
-real stdio client: start, read the page's accessibility snapshot, choose a
-selector from what the page said, step, finish. The storyboard an
-interactive run emits re-renders in batch to the same walkthrough, so "edit
-the steps that changed and render again" is a promise the tests hold. The
-skill in skill/ is the method an agent follows; the first real walkthrough
-— seven steps across www.evomedia.net, sixty-two seconds, Edge voice — is in
-examples/storyboards/.
+M4 — packaged. The MCP server is exercised end to end by a real stdio
+client: start, read the page's accessibility snapshot, choose a selector
+from what the page said, step, finish. The storyboard an interactive run
+emits re-renders in batch to the same walkthrough, so "edit the steps that
+changed and render again" is a promise the tests hold.
+
+On top of that: the agent reads the product's own documentation before writing
+narration; two speech providers with a browser voice picker; a login helper
+that saves a Playwright session without the agent seeing a credential; a local
+install that reports its own drift; and every build packaged as a verifiable
+zip. The package installs from npm and carries the skill with it.
+
+The skill in skill/ is the method an agent follows. The first real
+walkthrough — seven steps across www.evomedia.net, sixty-two seconds, Edge
+voice — is in examples/storyboards/.
 
 Use it from an agent
 --------------------
@@ -64,6 +71,22 @@ Claude Code — in a project's .mcp.json (or ~/.claude.json for every project):
     }
 
     mkdir -p ~/.claude/skills/videostroll && cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md
+
+Or from npm, without cloning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    {
+      "mcpServers": {
+        "videostroll": { "command": "npx", "args": ["evo.videostroll"] }
+      }
+    }
+
+    npx evo.videostroll --install-skill      # writes ~/.claude/skills/videostroll/SKILL.md
+    npx playwright install chromium          # the recorder needs a browser
+
+The skill ships inside the package, because the server without it is a
+capable but undirected recorder - and an npm install has no skill/ directory
+to copy from.
 
 Then ask for a walkthrough. The skill tells the agent to read the
 product's own docs with videostroll_docs, reconnoitre with

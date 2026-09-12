@@ -197,6 +197,10 @@ videostroll_step    { sessionId, narration, actions: Action[], minDurationMs? }
 videostroll_observe { sessionId }                     # look without recording
                     → { page: { url, title, snapshot }, screenshot }
 
+videostroll_docs    { url, docsUrl?, maxPages?, storageState? }
+                    → { found, discovered, glossary, tasks, pronunciation,
+                        dropped, skipped }   # the product's own vocabulary
+
 videostroll_finish  { sessionId, title?, captions? }
                     → { mp4, srt, vtt, manifest, storyboard, durationMs }
 

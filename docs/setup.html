@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>evo.videostroll — Set up a walkthrough</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --edge: #262b36;
+    --ink: #e8ecf3;
+    --dim: #98a2b3;
+    --accent: #4ade80;
+    --accent-dim: #14532d;
+    --code-bg: #0b0d11;
+    --warn: #fbbf24;
+    --mono: ui-monospace, "Cascadia Mono", "Consolas", "SF Mono", monospace;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--sans);
+    font-size: 19px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 48px 40px 96px; }
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: #bbf7d0; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  header { border-bottom: 1px solid var(--edge); padding-bottom: 26px; }
+  .brand { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 42px; line-height: 1.05; margin: 0; letter-spacing: -0.02em; }
+  .dot { color: var(--accent); }
+  .home { margin-left: auto; font-size: 16px; font-family: var(--mono); }
+  .tagline { color: var(--dim); font-size: 20px; margin: 14px 0 0; max-width: 44em; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; margin-top: 26px; }
+  @media (max-width: 980px) { .cols { grid-template-columns: 1fr; } }
+
+  fieldset {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 14px;
+    padding: 20px 24px 24px; margin: 0 0 20px;
+  }
+  legend {
+    font-size: 20px; font-weight: 600; padding: 0 10px; color: var(--ink);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .n {
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-dim);
+    color: var(--accent); font-family: var(--mono); font-size: 15px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  label { display: block; margin-top: 16px; font-size: 17px; color: var(--ink); font-weight: 500; }
+  .hint { display: block; font-weight: 400; color: var(--dim); font-size: 15px; margin-top: 2px; }
+  input[type=text], input[type=url], input[type=number], select, textarea {
+    width: 100%; margin-top: 7px; padding: 10px 12px;
+    background: var(--code-bg); color: var(--ink);
+    border: 1px solid var(--edge); border-radius: 8px;
+    font-family: var(--sans); font-size: 17px;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent;
+  }
+  input[aria-invalid="true"] { border-color: var(--warn); }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  .err { color: var(--warn); font-size: 15px; margin-top: 6px; min-height: 1.2em; }
+  .radios { margin-top: 8px; }
+  .radios label {
+    display: flex; gap: 10px; align-items: flex-start; margin-top: 9px;
+    font-weight: 400; cursor: pointer;
+  }
+  .radios input { margin-top: 6px; flex: none; }
+
+  .out { position: sticky; top: 20px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 14px;
+    padding: 20px 24px 24px; margin-bottom: 20px;
+  }
+  .card h2 { font-size: 20px; margin: 0; }
+  .card p { color: var(--dim); font-size: 16px; margin: 8px 0 0; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--edge); border-radius: 10px;
+    padding: 16px 18px; margin: 14px 0 0;
+    font-family: var(--mono); font-size: 15.5px; line-height: 1.7; color: var(--ink);
+    white-space: pre-wrap; overflow-wrap: anywhere; max-height: 46vh; overflow-y: auto;
+  }
+  .say { font-family: var(--sans); font-size: 17px; line-height: 1.6; color: var(--ink); }
+  button.copy {
+    margin-top: 12px; font-family: var(--sans); font-size: 15px;
+    color: var(--ink); background: var(--accent-dim);
+    border: 1px solid var(--accent-dim); border-radius: 8px;
+    padding: 9px 15px; cursor: pointer;
+  }
+  button.copy:hover { background: #166534; }
+  button.copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.copy[data-done] { color: var(--accent); }
+  .note { color: var(--dim); font-size: 15.5px; margin-top: 12px; }
+  .note b { color: var(--ink); }
+  footer { margin-top: 34px; color: var(--dim); font-size: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>Set up a walkthrough</h1>
+      <span class="home"><a href="/quickstart.html">quickstart</a> ·
+        <a href="/voices.html">voices</a> ·
+        <a href="https://evomedia.net">evomedia.net</a></span>
+    </div>
+    <p class="tagline">Fill this in and copy the result. You do not have to write any JSON,
+      and nothing here is saved or sent anywhere &mdash; it is all in your browser.</p>
+  </header>
+
+  <div class="cols">
+    <form id="f" novalidate>
+
+      <fieldset>
+        <legend><span class="n">1</span> The basics</legend>
+
+        <label for="url">Which website?
+          <span class="hint">The page the walkthrough starts on. Paste the whole address.</span>
+          <input type="url" id="url" placeholder="https://example.com" autocomplete="off">
+        </label>
+        <div class="err" id="url-err"></div>
+
+        <label for="title">What should it be called?
+          <span class="hint">Shown as the video's title.</span>
+          <input type="text" id="title" placeholder="A tour of Example" autocomplete="off">
+        </label>
+
+        <label for="goal">What should someone be able to do after watching?
+          <span class="hint">One line. Optional, but it is what stops a walkthrough wandering.</span>
+          <input type="text" id="goal" placeholder="Find a product and add it to the basket" autocomplete="off">
+        </label>
+
+        <label for="audience">Who is it for?
+          <span class="hint">Optional. Changes how much the narration explains.</span>
+          <input type="text" id="audience" placeholder="Someone who has never used the site" autocomplete="off">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="n">2</span> The file</legend>
+
+        <label for="name">File name
+          <span class="hint">Letters, numbers, dots, dashes and underscores. No slashes.
+            &ldquo;my-tour&rdquo; gives you my-tour.mp4.</span>
+          <input type="text" id="name" value="walkthrough" autocomplete="off">
+        </label>
+        <div class="err" id="name-err"></div>
+
+        <label for="folder">Where should the files go?
+          <span class="hint">A folder on your computer. Left empty, it picks one for you.</span>
+          <input type="text" id="folder" placeholder="out/" autocomplete="off">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="n">3</span> Size and sharpness</legend>
+
+        <label for="preset">Video size
+          <span class="hint">1080p suits most things. Bigger means a bigger file.</span>
+          <select id="preset">
+            <option value="1920x1080" selected>1080p — 1920 × 1080 (the usual choice)</option>
+            <option value="1280x720">720p — 1280 × 720 (smaller file)</option>
+            <option value="2560x1440">1440p — 2560 × 1440</option>
+            <option value="3840x2160">4K — 3840 × 2160 (large)</option>
+            <option value="390x844">Phone — 390 × 844 (tall and narrow)</option>
+            <option value="custom">Something else…</option>
+          </select>
+        </label>
+
+        <div id="custom-size" hidden>
+          <div class="row">
+            <div>
+              <label for="w">Width
+                <input type="number" id="w" min="320" max="7680" value="1920">
+              </label>
+            </div>
+            <div>
+              <label for="h">Height
+                <input type="number" id="h" min="240" max="4320" value="1080">
+              </label>
+            </div>
+          </div>
+          <div class="err" id="size-err"></div>
+        </div>
+
+        <label for="dsf">Sharpness
+          <span class="hint">Doubling this renders twice the pixels of the same layout &mdash;
+            crisp text, larger file. It does not make the page smaller.</span>
+          <select id="dsf">
+            <option value="1" selected>Normal</option>
+            <option value="2">Sharp (2×) — recommended for text-heavy sites</option>
+            <option value="3">Sharpest (3×) — slow, very large</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="n">4</span> The voice</legend>
+
+        <label for="provider">Which voice engine?
+          <select id="provider">
+            <option value="edge" selected>Edge — the default. Needs internet, sounds best.</option>
+            <option value="piper">Piper — works offline. Needs a one-off setup.</option>
+            <option value="silent">Silent — no speech, correct timings. For testing.</option>
+          </select>
+        </label>
+
+        <label for="voice">Voice name
+          <span class="hint">Leave empty for the default. To hear them first,
+            <a href="/voices.html">open the voice picker</a> and copy a name.</span>
+          <input type="text" id="voice" placeholder="en-US-AvaNeural" autocomplete="off">
+        </label>
+
+        <label for="rate">Speaking speed
+          <select id="rate">
+            <option value="0.85">Slower</option>
+            <option value="1" selected>Normal</option>
+            <option value="1.15">Faster</option>
+          </select>
+        </label>
+
+        <label for="captions">Subtitles
+          <select id="captions">
+            <option value="sidecar" selected>A separate subtitle file (you can turn it off)</option>
+            <option value="burn">Printed onto the video (always visible)</option>
+            <option value="both">Both — one file of each</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="n">5</span> Documentation and logins</legend>
+
+        <p class="note">Before writing the narration, the agent looks for the site&rsquo;s own
+          documentation so it uses the product&rsquo;s words. Usually you can leave this alone.</p>
+        <div class="radios" role="radiogroup" aria-label="Documentation">
+          <label><input type="radio" name="docs" value="auto" checked>
+            <span>Find it automatically <span class="hint">Looks for llms.txt, /docs,
+              docs.&lt;site&gt;, /help and a link on the page.</span></span></label>
+          <label><input type="radio" name="docs" value="at">
+            <span>It is at a particular address <span class="hint">Use this when the docs
+              live somewhere the search would not guess.</span></span></label>
+          <label><input type="radio" name="docs" value="off">
+            <span>Do not read any <span class="hint">The narration then relies on what is
+              on screen.</span></span></label>
+        </div>
+        <div id="docs-at" hidden>
+          <label for="docsUrl">Documentation address
+            <input type="url" id="docsUrl" placeholder="https://example.com/handbook" autocomplete="off">
+          </label>
+        </div>
+
+        <label for="storage">Is the site behind a login?
+          <span class="hint">Leave empty if not. Otherwise run
+            <code>npm run login</code> first and paste the file it makes.
+            <b>Never put a password here.</b></span>
+          <input type="text" id="storage" placeholder="auth/app.example.com.storage-state.json" autocomplete="off">
+        </label>
+        <div class="err" id="storage-err"></div>
+      </fieldset>
+    </form>
+
+    <div class="out">
+      <div class="card">
+        <h2>1 &mdash; Say this to the agent</h2>
+        <p>Open Claude Code in your project and paste this. This is all most people need.</p>
+        <pre class="say" id="say"></pre>
+        <button class="copy" type="button" data-src="say">Copy this</button>
+      </div>
+
+      <div class="card">
+        <h2>2 &mdash; Or save these settings</h2>
+        <p>Add your steps under <code>"steps"</code> and render it without an agent.
+          Save as <code>storyboard.json</code>, then run the command below.</p>
+        <pre id="json"></pre>
+        <button class="copy" type="button" data-src="json">Copy the settings</button>
+        <pre id="cmd"></pre>
+        <button class="copy" type="button" data-src="cmd">Copy the command</button>
+        <p class="note" id="docs-note"></p>
+      </div>
+    </div>
+  </div>
+
+  <footer>Nothing on this page leaves your browser &middot;
+    <a href="/quickstart.html">back to the quickstart</a></footer>
+
+</div>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  /* The server's own rule, copied deliberately: the page must refuse exactly
+     what the schema refuses, or someone fills this in, copies it, and the run
+     fails on something the form said was fine. */
+  var NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+  function esc(s) { return String(s).replace(/"/g, '\\"'); }
+
+  function readForm() {
+    var preset = $("preset").value;
+    var w, h;
+    if (preset === "custom") { w = +$("w").value || 0; h = +$("h").value || 0; }
+    else { var p = preset.split("x"); w = +p[0]; h = +p[1]; }
+    return {
+      url: $("url").value.trim(),
+      title: $("title").value.trim(),
+      goal: $("goal").value.trim(),
+      audience: $("audience").value.trim(),
+      name: $("name").value.trim(),
+      folder: $("folder").value.trim(),
+      w: w, h: h,
+      dsf: +$("dsf").value,
+      provider: $("provider").value,
+      voice: $("voice").value.trim(),
+      rate: +$("rate").value,
+      captions: $("captions").value,
+      docs: (document.querySelector('input[name=docs]:checked') || {}).value || "auto",
+      docsUrl: $("docsUrl").value.trim(),
+      storage: $("storage").value.trim()
+    };
+  }
+
+  function validate(v) {
+    var errs = {};
+    if (v.url && !/^https?:\/\/.+/i.test(v.url)) { errs.url = "Start with http:// or https://"; }
+    if (v.name && !NAME_RE.test(v.name)) {
+      errs.name = "Letters, numbers, dot, dash and underscore only — no slashes, and it cannot start with a dot.";
+    }
+    if (v.name.length > 64) { errs.name = "Too long — 64 characters at most."; }
+    if (v.w && v.w < 320) { errs.size = "Width must be at least 320."; }
+    if (v.h && v.h < 240) { errs.size = "Height must be at least 240."; }
+    /* A path is expected here; a password is not, and someone will try. */
+    if (/^[^\s]*(password|passwd|secret|token)/i.test(v.storage)) {
+      errs.storage = "That looks like a secret. This wants the path to the session file that npm run login writes.";
+    }
+    return errs;
+  }
+
+  function sentence(v) {
+    var site = v.url || "the site";
+    var bits = ["Record a walkthrough of " + site];
+    if (v.audience) { bits.push("for " + lower(v.audience)); }
+    var s = bits.join(" ") + ".";
+    if (v.goal) { s += " By the end they should be able to " + lower(v.goal).replace(/\.$/, "") + "."; }
+
+    var opts = [];
+    if (v.title) { opts.push('call it "' + v.title + '"'); }
+    if (v.name && v.name !== "walkthrough") { opts.push('name the files "' + v.name + '"'); }
+    if (v.folder) { opts.push("put them in " + v.folder); }
+    if (!(v.w === 1920 && v.h === 1080)) { opts.push("record at " + v.w + " by " + v.h); }
+    if (v.dsf !== 1) { opts.push("at " + v.dsf + "× sharpness"); }
+    if (v.provider !== "edge") { opts.push("use the " + v.provider + " voice engine"); }
+    if (v.voice) { opts.push("use the voice " + v.voice); }
+    if (v.rate !== 1) { opts.push("speak " + (v.rate > 1 ? "a little faster" : "a little slower")); }
+    if (v.captions === "burn") { opts.push("print the subtitles onto the video"); }
+    if (v.captions === "both") { opts.push("give me subtitles both as a file and printed on"); }
+    if (v.docs === "at" && v.docsUrl) { opts.push("read the documentation at " + v.docsUrl); }
+    if (v.docs === "off") { opts.push("do not read the site's documentation"); }
+    if (v.storage) { opts.push("sign in using " + v.storage); }
+
+    if (opts.length) { s += " Please " + join(opts) + "."; }
+    return s;
+  }
+
+  function lower(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+  function join(a) {
+    if (a.length === 1) { return a[0]; }
+    return a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+  }
+
+  /* Only real schema fields go in here. The documentation choice is a request
+     to the agent, not a storyboard field - putting it in would produce a file
+     the renderer rejects, which is a worse outcome than leaving it out and
+     saying so. */
+  function storyboard(v) {
+    var o = { version: 1, title: v.title || "A walkthrough", url: v.url || "https://example.com" };
+    if (v.name && v.name !== "walkthrough") { o.name = v.name; }
+    if (v.goal) { o.goal = v.goal; }
+    if (v.audience) { o.audience = v.audience; }
+    if (!(v.w === 1920 && v.h === 1080 && v.dsf === 1)) {
+      o.viewport = { width: v.w, height: v.h, deviceScaleFactor: v.dsf };
+    }
+    var voice = {};
+    if (v.provider !== "edge") { voice.provider = v.provider; }
+    if (v.voice) { voice.name = v.voice; }
+    if (v.rate !== 1) { voice.rate = v.rate; }
+    if (Object.keys(voice).length) { o.voice = voice; }
+    if (v.captions !== "sidecar") { o.captions = v.captions; }
+    if (v.storage) { o.storageState = v.storage; }
+    o.steps = [{ narration: "Replace this with the first thing to say.", actions: [] }];
+    return o;
+  }
+
+  function render() {
+    var v = readForm();
+    var errs = validate(v);
+
+    $("url-err").textContent = errs.url || "";
+    $("name-err").textContent = errs.name || "";
+    $("size-err").textContent = errs.size || "";
+    $("storage-err").textContent = errs.storage || "";
+    $("url").setAttribute("aria-invalid", errs.url ? "true" : "false");
+    $("name").setAttribute("aria-invalid", errs.name ? "true" : "false");
+    $("storage").setAttribute("aria-invalid", errs.storage ? "true" : "false");
+
+    $("custom-size").hidden = $("preset").value !== "custom";
+    $("docs-at").hidden = v.docs !== "at";
+
+    $("say").textContent = sentence(v);
+    $("json").textContent = JSON.stringify(storyboard(v), null, 2);
+    $("cmd").textContent = "npm run render -- storyboard.json " + (v.folder || "out/");
+
+    var note = $("docs-note");
+    if (v.docs === "auto") {
+      note.innerHTML = "The documentation choice is not part of the settings file &mdash; it is "
+        + "something you ask the agent for, so it is in the sentence above and not in the JSON. "
+        + "<b>Automatic is the default</b>, so there is nothing to say.";
+    } else {
+      note.innerHTML = "The documentation choice is <b>not a settings-file field</b> &mdash; "
+        + "rendering a storyboard does not read documentation at all. It is in the sentence "
+        + "above, which is the way to ask for it.";
+    }
+  }
+
+  document.getElementById("f").addEventListener("input", render);
+  document.getElementById("f").addEventListener("change", render);
+
+  Array.prototype.forEach.call(document.querySelectorAll("button.copy"), function (btn) {
+    btn.addEventListener("click", function () {
+      var text = document.getElementById(btn.getAttribute("data-src")).textContent;
+      var label = btn.textContent;
+      function done(ok) {
+        btn.textContent = ok ? "Copied" : "Press Ctrl+C";
+        btn.setAttribute("data-done", "1");
+        setTimeout(function () { btn.textContent = label; btn.removeAttribute("data-done"); }, 1600);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { pick(); });
+      } else { pick(); }
+      function pick() {
+        var el = document.getElementById(btn.getAttribute("data-src"));
+        var r = document.createRange(); r.selectNodeContents(el);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        done(false);
+      }
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

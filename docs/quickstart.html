@@ -98,7 +98,12 @@
                          background: rgba(74,222,128,.10); }
   @media (prefers-reduced-motion: reduce) { .copy { transition: none; } }
 
-  pre .c { color: #64748b; }
+  pre .c { color: #8b98ab; }
+  /* An example of something to SAY, not a comment. It was wearing the comment
+     class - grey on near-black, the faintest thing on the page, and the one
+     line a reader is meant to copy. */
+  pre.say { color: var(--ink); font-style: normal; }
+  pre.say .q { color: var(--accent); }
   pre .k { color: var(--accent); }
   ul { margin: 16px 0 0; padding-left: 24px; color: var(--dim); }
   li { margin: 8px 0; }
@@ -169,6 +174,10 @@ npm run build</pre>
 <pre>npm test        <span class="c"># the whole suite, no network</span></pre>
     <p>Prefer not to clone? The package installs from npm and carries the skill with it
       &mdash; see step 4.</p>
+    <p><strong>Would rather fill in a form than read ten steps?</strong>
+      <a href="/setup.html">The setup page</a> asks plain questions &mdash; which site, what
+      size, which voice, where the files go &mdash; and gives you a sentence to paste. It
+      needs this install done first, and nothing else.</p>
   </section>
 
   <section id="register">
@@ -212,10 +221,18 @@ npx playwright install chromium   <span class="c"># the recorder still needs a b
 
   <section id="current">
     <h2><span class="n">5</span> Keeping this machine current</h2>
-    <p>There is no server to deploy to, but <strong>&ldquo;installed&rdquo; is three things</strong>, and
-      <code>git pull</code> is only the first. <code>dist/</code> is gitignored and the registered
-      server runs from it, so a pull alone leaves it on stale compiled code &mdash; and the
-      skill above is a copy, which nothing detects the drift of.</p>
+    <p>There is no server to deploy to, but <strong>&ldquo;installed&rdquo; is three separate
+      things</strong>, and <code>git pull</code> is only the first of them:</p>
+    <ul>
+      <li><b>1. The source</b> &mdash; what <code>git pull</code> brings down.</li>
+      <li><b>2. The built server</b> &mdash; <code>server/dist/</code>, which is gitignored and
+        is what your MCP client actually runs. A pull alone leaves it on stale compiled
+        code, so the new source is on disk and none of it is running.</li>
+      <li><b>3. The installed skill</b> &mdash; the copy at
+        <code>~/.claude/skills/videostroll/SKILL.md</code>. It is a copy, so nothing notices
+        when it falls behind the one in the repository.</li>
+    </ul>
+    <p>One command does all three and tells you which of them moved.</p>
 <pre>npm run deploy:local              <span class="c"># pull, rebuild, copy the skill, report</span>
 npm run deploy:local -- --check   <span class="c"># what is stale, change nothing</span></pre>
     <p>It refuses to pull over uncommitted changes or onto a branch that is not the
@@ -225,8 +242,8 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
   <section id="use">
     <h2><span class="n">6</span> Ask for a walkthrough</h2>
     <p>That is the whole setup. Start a session and ask in plain words.</p>
-<pre><span class="c">"Record a two minute walkthrough of https://example.com</span>
-<span class="c"> for someone who has never seen it."</span></pre>
+<pre class="say"><span class="q">&ldquo;</span>Record a two minute walkthrough of https://example.com
+ for someone who has never seen it.<span class="q">&rdquo;</span></pre>
     <p>The agent reads the page, drafts the steps, records them one at a time, and checks
       what it recorded against what it said.</p>
   </section>
@@ -257,9 +274,21 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
       publish. Lines that look like an attempt to redirect the agent are dropped and
       counted rather than quietly swallowed. That is a speed bump, not a wall &mdash; watch
       a walkthrough of a site you do not control before you publish it.</p>
-    <p>To read the docs of one site while recording another, or to point at a docs URL the
-      search would not guess, ask for it in words: <i>&ldquo;use the docs at
-      example.com/handbook&rdquo;</i>.</p>
+    <h3 style="font-size:20px;margin:26px 0 0;">How to use it</h3>
+    <p><strong>Normally you do nothing.</strong> The skill does this on its own the moment
+      you ask for a walkthrough &mdash; there is no setting to turn on and nothing to
+      install.</p>
+    <p>You only need to say something when the automatic search would get it wrong. You are
+      talking to <strong>the agent, in the chat</strong>, in the same message where you ask
+      for the walkthrough &mdash; there is no flag and no config file for this:</p>
+<pre class="say"><span class="q">&ldquo;</span>Record a walkthrough of https://app.example.com.
+ The documentation is at https://example.com/handbook.<span class="q">&rdquo;</span></pre>
+    <p>To skip it entirely &mdash; a site with no docs worth reading, or one you would
+      rather it did not fetch &mdash; say so the same way:</p>
+<pre class="say"><span class="q">&ldquo;</span>Record a walkthrough of https://example.com.
+ Don&rsquo;t read the site&rsquo;s documentation.<span class="q">&rdquo;</span></pre>
+    <p>If writing that sentence is the part you would rather not do,
+      <a href="/setup.html">the setup page</a> builds it for you from a form.</p>
   </section>
 
   <section id="login">
@@ -287,6 +316,8 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
     <p>Every recording also writes the storyboard that produced it. When the site changes,
       edit the steps that changed and render again. No agent needed.</p>
 <pre>npm run render -- ../examples/storyboards/example-com.json out/</pre>
+    <p>Writing one from scratch is easier from <a href="/setup.html">the setup page</a>: it
+      produces the settings, and you add the steps.</p>
   </section>
 
   <section id="output">
@@ -299,6 +330,11 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
       <div class="out"><b>walkthrough.storyboard.json</b><span>re-render it, do not redo it</span></div>
       <div class="out"><b>thumbs/</b><span>one still per step</span></div>
     </div>
+    <p><code>walkthrough</code> is just the default name. Set <code>name</code> and every
+      file above follows it &mdash; <code>"name": "onboarding"</code> gives
+      <code>onboarding.mp4</code>, <code>onboarding.srt</code> and the rest, which is what
+      stops a second recording overwriting the first. A file name only: a slash or a leading
+      dot is refused, because the value is joined onto the output folder.</p>
     <p><strong>1080p is the default, not the only size.</strong> The recording is the
       browser viewport, so setting the viewport sets the resolution &mdash; anything from
       320&times;240 upwards.</p>

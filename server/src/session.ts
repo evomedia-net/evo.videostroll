@@ -23,7 +23,7 @@ import { concatSegments, encodeSegment, mux, probeDurationMs, writeChapters, typ
 import { cuesForStep, toSrt, toVtt, type Cue } from "./captions.js";
 import { CURSOR_INIT_SCRIPT, Cursor } from "./cursor.js";
 import { StepRecorder, type StepCapture } from "./recorder.js";
-import { parseStep, parseStoryboard, resolveVoice, StoryboardSchema, ViewportSchema, VoiceSchema, type Step, type Storyboard, type Voice } from "./storyboard.js";
+import { OutputName, parseStep, parseStoryboard, resolveVoice, StoryboardSchema, ViewportSchema, VoiceSchema, type Step, type Storyboard, type Voice } from "./storyboard.js";
 import { getProvider, type Synthesis, type TtsProvider } from "./tts/index.js";
 import { concatWav, padWav } from "./wav.js";
 
@@ -33,6 +33,8 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 export const STEP_TAIL_MS = 300;
 
 export interface StartOptions {
+  /** Base name for the output files. Defaults to "walkthrough". */
+  name?: string;
   url: string;
   title?: string;
   viewport?: Partial<{ width: number; height: number; deviceScaleFactor: number }>;
@@ -106,6 +108,8 @@ function stamp(): string {
 export class Session {
   readonly id: string;
   readonly outputDir: string;
+  /** Base name for the output files; every artefact below is named from it. */
+  private outputName = "walkthrough";
   private readonly workDir: string;
   private readonly records: Recorded[] = [];
   private cumulativeMs = 0;
@@ -154,7 +158,11 @@ export class Session {
     const cursor = new Cursor(page, viewport.width / 2, viewport.height / 2);
     await page.mouse.move(viewport.width / 2, viewport.height / 2);
 
-    return new Session(browser, context, page, cdp, cursor, provider, voice, viewport, title, o.url, o.captions ?? "sidecar", outputDir);
+    const session = new Session(browser, context, page, cdp, cursor, provider, voice, viewport, title, o.url, o.captions ?? "sidecar", outputDir);
+    // Through the schema so a name with a slash in it is refused here, at
+    // the boundary, rather than writing outside the output directory.
+    if (o.name !== undefined) session.outputName = OutputName.parse(o.name);
+    return session;
   }
 
   /**
@@ -267,8 +275,9 @@ export class Session {
     // Captions.
     const cues: Cue[] = [];
     for (const r of this.records) cues.push(...cuesForStep(r.step.narration, r.step.startMs, r.synthesis, cues.length + 1));
-    const srt = join(this.outputDir, "walkthrough.srt");
-    const vtt = join(this.outputDir, "walkthrough.vtt");
+    const base = this.outputName;
+    const srt = join(this.outputDir, `${base}.srt`);
+    const vtt = join(this.outputDir, `${base}.vtt`);
     await writeFile(srt, toSrt(cues), "utf8");
     await writeFile(vtt, toVtt(cues), "utf8");
 
@@ -284,10 +293,10 @@ export class Session {
     await writeChapters(chapters, chaptersFile);
 
     // Mux. "burn" re-encodes with the captions in the frames; "both" writes a second file.
-    const mp4 = join(this.outputDir, "walkthrough.mp4");
+    const mp4 = join(this.outputDir, `${base}.mp4`);
     await mux({ video, audioWav: audio, out: mp4, chaptersFile, title, burnSubtitles: captions === "burn" ? srt : undefined });
     if (captions === "both") {
-      await mux({ video, audioWav: audio, out: join(this.outputDir, "walkthrough.captioned.mp4"), chaptersFile, title, burnSubtitles: srt });
+      await mux({ video, audioWav: audio, out: join(this.outputDir, `${base}.captioned.mp4`), chaptersFile, title, burnSubtitles: srt });
     }
     const durationMs = await probeDurationMs(mp4);
 
@@ -295,16 +304,17 @@ export class Session {
     const storyboard: Storyboard = StoryboardSchema.parse({
       version: 1,
       title,
+      name: base,
       url: this.startUrl,
       viewport: this.viewport,
       voice: this.voice,
       captions,
       steps: this.records.map((r) => ({ id: r.step.id, narration: r.step.narration, actions: r.step.actions, chapter: r.step.chapter })),
     });
-    const storyboardFile = join(this.outputDir, "walkthrough.storyboard.json");
+    const storyboardFile = join(this.outputDir, `${base}.storyboard.json`);
     await writeFile(storyboardFile, JSON.stringify(storyboard, null, 2) + "\n", "utf8");
 
-    const manifestFile = join(this.outputDir, "walkthrough.json");
+    const manifestFile = join(this.outputDir, `${base}.json`);
     const manifest = {
       generated: new Date().toISOString(),
       title,
@@ -347,6 +357,7 @@ export async function render(input: unknown, o: { outputDir?: string; headless?:
     viewport: sb.viewport,
     voice: sb.voice,
     captions: sb.captions,
+    name: sb.name,
     storageState: sb.storageState,
     outputDir: o.outputDir,
     headless: o.headless,

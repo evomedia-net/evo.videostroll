@@ -147,9 +147,29 @@ export const StepSchema = z.strictObject({
 });
 export type Step = z.infer<typeof StepSchema>;
 
+/**
+ * What the output files are called, before their extensions.
+ *
+ * A base name, never a path. The value is joined onto the output directory, so
+ * a slash or a `..` in it would write outside the folder the caller chose -
+ * which is the whole reason this is a narrow pattern rather than a free
+ * string. No leading dot either: a file starting with one is hidden on Unix,
+ * and a walkthrough nobody can find is the same as one that was not written.
+ */
+export const OUTPUT_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+/** The `name` rule on its own, for callers that set it outside a storyboard. */
+export const OutputName = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(OUTPUT_NAME_RE, "a base file name only - no slashes, no leading dot");
+
 export const StoryboardSchema = z.strictObject({
   version: z.literal(1),
   title: z.string().min(1).max(200),
+  /** Base name for every output file. `walkthrough` gives walkthrough.mp4. */
+  name: OutputName.default("walkthrough"),
   url: z.string().refine(isUrl, "not a URL"),
   goal: z.string().optional(),
   audience: z.string().optional(),

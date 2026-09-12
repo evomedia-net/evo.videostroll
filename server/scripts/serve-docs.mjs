@@ -25,6 +25,7 @@
  *   node scripts/serve-docs.mjs [port]     # default 8099
  */
 import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -141,7 +142,58 @@ const server = createServer(async (req, res) => {
   }
 });
 
+/**
+ * The banner, read rather than inlined.
+ *
+ * The art contains both backticks and backslashes, so a template literal
+ * mangles it and a quoted string turns it into an escaping puzzle that the
+ * next person editing the art has to solve. A file is the honest place for
+ * a picture. Missing is not fatal - the URLs below are the point.
+ */
+function banner() {
+  try {
+    return readFileSync(new URL("banner.txt", import.meta.url), "utf8").replace(/\n+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The project's own GitHub URL, taken from package.json rather than typed
+ * here. One source of truth: if the repository ever moves, the banner follows
+ * it instead of pointing confidently at nothing.
+ */
+function repoUrl() {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    const raw = pkg.repository?.url ?? pkg.homepage ?? "";
+    const clean = raw.replace(/^git\+/, "").replace(/\.git$/, "").replace(/#.*$/, "");
+    return clean.startsWith("http") ? clean : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Green, unless the output is not a terminal or NO_COLOR asks otherwise. */
+function green(text) {
+  const plain = !process.stdout.isTTY || process.env.NO_COLOR !== undefined;
+  return plain ? text : `\u001b[32m${text}\u001b[0m`;
+}
+
 server.listen(PORT, "127.0.0.1", () => {
+  const art = banner();
+  if (art) {
+    console.log("");
+    console.log(green(art));
+    console.log("");
+  }
   console.log(`docs   http://127.0.0.1:${PORT}/quickstart.html`);
+  console.log(`setup  http://127.0.0.1:${PORT}/setup.html`);
   console.log(`voices http://127.0.0.1:${PORT}/voices.html`);
+  console.log("");
+  const repo = repoUrl();
+  if (repo) { console.log(`github ${repo}`); }
+  console.log("site   https://evomedia.net");
+  console.log("");
+  console.log("Ctrl-C to stop.");
 });

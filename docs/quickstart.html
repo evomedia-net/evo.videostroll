@@ -29,6 +29,13 @@
   }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 56px 48px 96px; }
 
+  /* There was no rule here at all, so every link fell back to the browser's
+     default blue - which on this near-black panel is close to unreadable. */
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+      text-decoration-thickness: 1px; }
+  a:hover { color: #bbf7d0; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
   header { border-bottom: 1px solid var(--edge); padding-bottom: 34px; margin-bottom: 14px; }
   .brand { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
   h1 { font-size: 54px; line-height: 1.05; margin: 0; letter-spacing: -0.02em; }
@@ -38,6 +45,7 @@
     border: 1px solid var(--accent-dim); background: rgba(74,222,128,.07);
     padding: 5px 12px; border-radius: 999px; white-space: nowrap;
   }
+  .home { margin-left: auto; font-size: 17px; font-family: var(--mono); }
   .tagline { color: var(--dim); font-size: 23px; margin: 18px 0 0; max-width: 46em; }
 
   section {
@@ -61,6 +69,10 @@
   }
   p { margin: 12px 0 0; color: var(--dim); max-width: 52em; }
   p strong { color: var(--ink); font-weight: 600; }
+
+  /* The copy button is positioned against this, so every block that has one
+     is wrapped at load. */
+  .snip { position: relative; }
   pre {
     background: var(--code-bg); border: 1px solid var(--edge); border-radius: 10px;
     padding: 20px 24px; margin: 20px 0 0;
@@ -70,6 +82,22 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
+  /* Room for the button so a long first line cannot run under it. */
+  .snip pre { padding-right: 108px; }
+  .copy {
+    position: absolute; top: 30px; right: 12px;
+    font-family: var(--sans); font-size: 14px; line-height: 1;
+    color: var(--dim); background: var(--panel);
+    border: 1px solid var(--edge); border-radius: 7px;
+    padding: 7px 11px; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .copy:hover { color: var(--ink); border-color: var(--dim); }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .copy[data-done="1"] { color: var(--accent); border-color: var(--accent-dim);
+                         background: rgba(74,222,128,.10); }
+  @media (prefers-reduced-motion: reduce) { .copy { transition: none; } }
+
   pre .c { color: #64748b; }
   pre .k { color: var(--accent); }
   ul { margin: 16px 0 0; padding-left: 24px; color: var(--dim); }
@@ -84,7 +112,16 @@
   .out { border-left: 3px solid var(--accent-dim); padding-left: 18px; }
   .out b { display: block; font-family: var(--mono); font-size: 17px; color: var(--accent); }
   .out span { color: var(--dim); font-size: 18px; }
+  .os { font-family: var(--mono); font-size: 15px; color: var(--accent);
+        margin: 20px 0 -8px; letter-spacing: .02em; }
   footer { margin-top: 40px; color: var(--dim); font-size: 18px; text-align: center; }
+  @media (max-width: 720px) {
+    .wrap { padding: 36px 20px 72px; }
+    h1 { font-size: 38px; }
+    body { font-size: 18px; }
+    .grid { grid-template-columns: 1fr; }
+    .home { margin-left: 0; width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -94,6 +131,7 @@
     <div class="brand">
       <h1>evo<span class="dot">.</span>videostroll</h1>
       <span class="badge">MCP server + Claude Code skill</span>
+      <span class="home"><a href="https://evomedia.net">evomedia.net</a></span>
     </div>
     <p class="tagline">An agent records a narrated walkthrough of a website. It drives the
       browser, a visible cursor follows, the narration is spoken aloud, and captions come
@@ -102,9 +140,18 @@
 
   <section id="prereqs">
     <h2><span class="n">1</span> What you need</h2>
-    <p><strong>Node 20 or newer, and nothing else.</strong> The video encoder ships inside
-      the package, so there is no separate ffmpeg to install. The default voice is a network
-      call; an offline voice is available if you would rather not make one.</p>
+    <p><strong>Node.js, version 20 or newer.</strong> Node is the program that runs
+      JavaScript outside a browser &mdash; this tool is written for it, and it is not
+      something Windows or macOS comes with. If you have never installed it, get the
+      <b>LTS</b> build from <a href="https://nodejs.org">nodejs.org</a> and accept every
+      default.</p>
+    <p>To find out whether you already have it, and which version, open a terminal:</p>
+<pre>node --version   <span class="c"># v20.x.x or higher — any lower and the install will fail</span></pre>
+    <p>If that prints <code>v18</code> or says the command is not found, install from the
+      link above before going on. Nothing else is required: <strong>the video encoder ships
+      inside the package</strong>, so there is no separate ffmpeg to install. The default
+      voice is a network call; an offline voice is available if you would rather not make
+      one.</p>
   </section>
 
   <section id="install">
@@ -119,28 +166,48 @@ npm ci
 npx playwright install chromium
 npm run build</pre>
     <p>Confirm it works before wiring anything up. Every test runs offline.</p>
-<pre>npm test        <span class="c"># 68 tests, no network</span></pre>
+<pre>npm test        <span class="c"># the whole suite, no network</span></pre>
+    <p>Prefer not to clone? The package installs from npm and carries the skill with it
+      &mdash; see step 4.</p>
   </section>
 
   <section id="register">
     <h2><span class="n">3</span> Register the server</h2>
-    <p>Point your MCP client at the built server. For Claude Code, one command registers it
-      for <strong>every</strong> project on the machine.</p>
-<pre>claude mcp add -s user videostroll -- \
+    <p>This step needs <strong>Claude Code</strong>, Anthropic&rsquo;s command-line tool
+      &mdash; the <code>claude</code> command below is part of it, not part of this project.
+      If you do not have it, install it first from
+      <a href="https://claude.com/claude-code">claude.com/claude-code</a>, which covers
+      Windows, macOS and Linux. Check it is there:</p>
+<pre>claude --version</pre>
+    <p>Then point it at the built server. One command registers it for
+      <strong>every</strong> project on the machine. Use the path form your shell expects
+      &mdash; the only difference is the slashes and the line continuation.</p>
+    <p class="os">Windows &middot; PowerShell</p>
+<pre>claude mcp add -s user videostroll -- `
   node C:\path\to\evo.videostroll\server\dist\index.js</pre>
-    <p>Check it took. You are looking for the word Connected.</p>
+    <p class="os">macOS &middot; Linux &middot; Git Bash &middot; WSL</p>
+<pre>claude mcp add -s user videostroll -- \
+  node /path/to/evo.videostroll/server/dist/index.js</pre>
+    <p>Replace the path with wherever you cloned it. Then check it took &mdash; you are
+      looking for the word <b>Connected</b>.</p>
 <pre>claude mcp get videostroll</pre>
+    <p>Any other MCP client works too: point it at <code>node …/server/dist/index.js</code>,
+      or at <code>npx evo.videostroll</code>.</p>
   </section>
 
   <section id="skill">
     <h2><span class="n">4</span> Install the skill</h2>
     <p>The server records. The skill is what makes the recording <strong>worth
-      watching</strong>: it tells the agent to read the page first, storyboard before
-      recording, keep narration to two sentences, and verify the result. Copy it out of the
-      repository.</p>
+      watching</strong>: it tells the agent to read the product&rsquo;s own documentation,
+      read the page, storyboard before recording, keep narration to two sentences, and
+      verify the result. Copy it out of the repository.</p>
 <pre>mkdir -p ~/.claude/skills/videostroll
 cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md</pre>
     <p>Edit it in the repository and copy it out again. Never the other way round.</p>
+    <p>If you installed from npm rather than cloning, the skill ships inside the package
+      and one command puts it in the same place:</p>
+<pre>npx evo.videostroll --install-skill
+npx playwright install chromium   <span class="c"># the recorder still needs a browser</span></pre>
   </section>
 
   <section id="current">
@@ -164,8 +231,39 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
       what it recorded against what it said.</p>
   </section>
 
+  <section id="docs">
+    <h2><span class="n">7</span> It reads the product&rsquo;s docs first</h2>
+    <p>Before writing a word of narration, the agent looks for the site&rsquo;s own
+      documentation. <strong>Narration that uses a product&rsquo;s own nouns sounds like
+      someone who works there</strong>; narration that invents its own sounds like a
+      stranger reading labels off the screen &mdash; and the page itself shows what is
+      there, never what any of it is <em>called</em>.</p>
+    <p>It looks where a person would: <code>llms.txt</code> first, then <code>/docs</code>,
+      <code>docs.&lt;site&gt;</code>, <code>/help</code>, <code>/guide</code>, and finally
+      any link on the page that reads like a way in. What comes back is
+      <strong>vocabulary, not pages</strong>:</p>
+    <ul>
+      <li><b>glossary</b> — what the product calls its features, one line each.</li>
+      <li><b>tasks</b> — its procedures, found by title <i>and</i> by spotting a numbered
+        list, which is how it finds them on the many sites whose headings are all nouns.</li>
+      <li><b>pronunciation</b> — how to say the awkward names aloud. It reads the docs to
+        decide, so it knows &ldquo;evo dot e h s&rdquo; from &ldquo;evo dot orchard&rdquo;.</li>
+    </ul>
+    <p>Nothing is needed from you &mdash; the skill does this on its own. A site with no
+      documentation is an ordinary outcome, not an error; the agent falls back to the
+      wording in the interface.</p>
+    <p><strong>What comes back is treated as data, never as instructions.</strong> It is
+      text written by whoever runs the site, and it ends up spoken aloud in a video you
+      publish. Lines that look like an attempt to redirect the agent are dropped and
+      counted rather than quietly swallowed. That is a speed bump, not a wall &mdash; watch
+      a walkthrough of a site you do not control before you publish it.</p>
+    <p>To read the docs of one site while recording another, or to point at a docs URL the
+      search would not guess, ask for it in words: <i>&ldquo;use the docs at
+      example.com/handbook&rdquo;</i>.</p>
+  </section>
+
   <section id="login">
-    <h2><span class="n">7</span> Sites behind a login</h2>
+    <h2><span class="n">8</span> Sites behind a login</h2>
     <p>The recorder never types a password and a storyboard never holds one.
       <strong>You sign in yourself, once</strong>, and it keeps the session.</p>
 <pre>npm run login -- https://app.example.com</pre>
@@ -185,26 +283,38 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
   </section>
 
   <section id="batch">
-    <h2><span class="n">8</span> Or render a storyboard</h2>
+    <h2><span class="n">9</span> Or render a storyboard</h2>
     <p>Every recording also writes the storyboard that produced it. When the site changes,
       edit the steps that changed and render again. No agent needed.</p>
 <pre>npm run render -- ../examples/storyboards/example-com.json out/</pre>
   </section>
 
   <section id="output">
-    <h2><span class="n">9</span> What comes out</h2>
+    <h2><span class="n">10</span> What comes out</h2>
     <div class="grid">
-      <div class="out"><b>walkthrough.mp4</b><span>1080p30, H.264 and AAC</span></div>
+      <div class="out"><b>walkthrough.mp4</b><span>H.264 and AAC, 30fps, 1080p by default</span></div>
       <div class="out"><b>walkthrough.captioned.mp4</b><span>the same, captions burned in</span></div>
       <div class="out"><b>walkthrough.srt / .vtt</b><span>captions aligned to the spoken words</span></div>
       <div class="out"><b>walkthrough.json</b><span>steps, cues, chapters, durations</span></div>
       <div class="out"><b>walkthrough.storyboard.json</b><span>re-render it, do not redo it</span></div>
       <div class="out"><b>thumbs/</b><span>one still per step</span></div>
     </div>
+    <p><strong>1080p is the default, not the only size.</strong> The recording is the
+      browser viewport, so setting the viewport sets the resolution &mdash; anything from
+      320&times;240 upwards.</p>
+<pre>{ <span class="k">"viewport"</span>: { <span class="k">"width"</span>: 1280, <span class="k">"height"</span>: 720, <span class="k">"deviceScaleFactor"</span>: 2 } }</pre>
+    <p><code>deviceScaleFactor</code> is the pixel density, 1 to 3. At <code>2</code> a
+      1280&times;720 viewport records 2560&times;1440 &mdash; a retina-sharp frame of a
+      layout that is still laid out for 1280, which is usually what you want rather than
+      a 4K viewport full of tiny text. It costs encode time and file size in proportion.</p>
+    <p>Odd numbers are safe: H.264 needs even dimensions and the encoder rounds down for
+      you. A phone-shaped walkthrough is just a narrow viewport &mdash;
+      <code>390&times;844</code> records like a handset, though the site is responsible for
+      responding to it.</p>
   </section>
 
   <section id="voices">
-    <h2><span class="n">10</span> Voices</h2>
+    <h2><span class="n">11</span> Voices</h2>
     <p><strong>Pick one rather than guessing a name.</strong> The default provider
       offers 322 voices &mdash; 47 of them English, split almost evenly between male
       and female &mdash; each listed with its gender and character.</p>
@@ -222,8 +332,67 @@ npm run deploy:local -- --check   <span class="c"># what is stale, change nothin
       run stops and says so.</p>
   </section>
 
-  <footer id="end">MIT licensed · the walkthrough you are watching was recorded by the tool it describes</footer>
+  <footer id="end">MIT licensed &middot;
+    <a href="https://github.com/evomedia-net/evo.videostroll">github.com/evomedia-net/evo.videostroll</a>
+    &middot; <a href="https://evomedia.net">evomedia.net</a></footer>
 
 </div>
+<script>
+/* A copy button on every command block.
+   Added at load rather than written into each block by hand: there are a
+   dozen of them, and the one that gets forgotten is the one someone needs. */
+(function () {
+  var blocks = document.querySelectorAll("pre");
+  for (var i = 0; i < blocks.length; i++) {
+    (function (pre) {
+      var wrap = document.createElement("div");
+      wrap.className = "snip";
+      pre.parentNode.insertBefore(wrap, pre);
+      wrap.appendChild(pre);
+
+      var btn = document.createElement("button");
+      btn.className = "copy";
+      btn.type = "button";
+      btn.textContent = "Copy";
+      /* The block is not a form control, so say what it does and what it
+         copies - a screen reader otherwise announces a dozen bare "Copy"s. */
+      btn.setAttribute("aria-label", "Copy this command to the clipboard");
+      wrap.appendChild(btn);
+
+      var reset = null;
+      btn.addEventListener("click", function () {
+        var text = pre.innerText.replace(/\s+$/, "");
+        function done(ok) {
+          btn.textContent = ok ? "Copied" : "Press Ctrl+C";
+          btn.setAttribute("data-done", ok ? "1" : "0");
+          if (reset) { clearTimeout(reset); }
+          reset = setTimeout(function () {
+            btn.textContent = "Copy";
+            btn.removeAttribute("data-done");
+          }, 1600);
+        }
+        /* navigator.clipboard needs a secure context. This page is served
+           over http from 127.0.0.1, which counts as one - but a copy of it
+           opened straight off disk as file:// does not, so fall back rather
+           than doing nothing at all. */
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(function () { done(true); },
+                                                   function () { select(); });
+        } else {
+          select();
+        }
+        function select() {
+          var r = document.createRange();
+          r.selectNodeContents(pre);
+          var s = window.getSelection();
+          s.removeAllRanges();
+          s.addRange(r);
+          done(false);
+        }
+      });
+    })(blocks[i]);
+  }
+})();
+</script>
 </body>
 </html>

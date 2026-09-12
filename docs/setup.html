@@ -34,6 +34,12 @@
   h1 { font-size: 42px; line-height: 1.05; margin: 0; letter-spacing: -0.02em; }
   .dot { color: var(--accent); }
   .home { margin-left: auto; font-size: 16px; font-family: var(--mono); }
+  /* The same menu on every page. The page you are on is shown but not a link:
+     a link to where you already are is a small lie, and it is the one people
+     click by accident. */
+  .pages { font-family: var(--mono); font-size: 16px; color: var(--dim); }
+  .pages [aria-current="page"] { color: var(--ink); font-weight: 600; }
+
   .tagline { color: var(--dim); font-size: 20px; margin: 14px 0 0; max-width: 44em; }
 
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; margin-top: 26px; }
@@ -79,7 +85,16 @@
     background: var(--panel); border: 1px solid var(--edge); border-radius: 14px;
     padding: 20px 24px 24px; margin-bottom: 20px;
   }
-  .card h2 { font-size: 20px; margin: 0; }
+  .card h2 { font-size: 20px; margin: 0; display: flex; align-items: center;
+             gap: 10px; flex-wrap: wrap; }
+  .card.choose { border-color: var(--accent-dim); background: rgba(74,222,128,.06); }
+  .card.choose p { color: var(--ink); margin: 0; }
+  .tag {
+    font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: .02em;
+    color: var(--accent); background: rgba(74,222,128,.10);
+    border: 1px solid var(--accent-dim); border-radius: 999px; padding: 3px 9px;
+  }
+  .tag.alt { color: var(--dim); background: transparent; border-color: var(--edge); }
   .card p { color: var(--dim); font-size: 16px; margin: 8px 0 0; }
   pre {
     background: var(--code-bg); border: 1px solid var(--edge); border-radius: 10px;
@@ -108,12 +123,16 @@
   <header>
     <div class="brand">
       <h1>Set up a walkthrough</h1>
-      <span class="home"><a href="/quickstart.html">quickstart</a> ·
-        <a href="/voices.html">voices</a> ·
-        <a href="https://evomedia.net">evomedia.net</a></span>
+<span class="home"><nav class="pages" aria-label="Pages">
+      <a href="/quickstart.html">quickstart</a>
+      &middot; <span aria-current="page">setup</span>
+      &middot; <a href="/voices.html">voices</a>
+      &middot; <a href="https://evomedia.net">evomedia.net</a></nav></span>
     </div>
-    <p class="tagline">Fill this in and copy the result. You do not have to write any JSON,
-      and nothing here is saved or sent anywhere &mdash; it is all in your browser.</p>
+    <p class="tagline">Answer the questions on the left. The right-hand side fills in as
+      you type with <strong>two different ways to start the recording &mdash; take whichever
+      suits you, you do not need both</strong>. You never have to write any JSON, and
+      nothing here is saved or sent anywhere: it all happens in your browser.</p>
   </header>
 
   <div class="cols">
@@ -269,17 +288,28 @@
     </form>
 
     <div class="out">
+      <div class="card choose">
+        <p><strong>Two ways to start the recording. Take one &mdash; you do not need
+          both.</strong> They do the same thing; the difference is whether an agent writes
+          the steps for you.</p>
+      </div>
+
       <div class="card">
-        <h2>1 &mdash; Say this to the agent</h2>
-        <p>Open Claude Code in your project and paste this. This is all most people need.</p>
+        <h2>Either &mdash; say this to the agent <span class="tag">easiest</span></h2>
+        <p>Open Claude Code in your project and paste this in. The agent works out the steps,
+          records them and hands back the video. <strong>Most people want this one, and it is
+          the whole job &mdash; there is nothing below to do as well.</strong></p>
         <pre class="say" id="say"></pre>
         <button class="copy" type="button" data-src="say">Copy this</button>
       </div>
 
       <div class="card">
-        <h2>2 &mdash; Or save these settings</h2>
-        <p>Add your steps under <code>"steps"</code> and render it without an agent.
-          Save as <code>storyboard.json</code>, then run the command below.</p>
+        <h2>Or &mdash; save a settings file <span class="tag alt">no agent</span></h2>
+        <p><strong>Only if you would rather not use an agent at all.</strong> You write the
+          narration yourself under <code>"steps"</code>, and the recorder follows it exactly.
+          Save this as <code>storyboard.json</code> and run the command underneath.</p>
+        <p class="note"><b>Ignore this if you used the sentence above.</b> It is the same
+          settings by another route, not a second step.</p>
         <pre id="json"></pre>
         <button class="copy" type="button" data-src="json">Copy the settings</button>
         <pre id="cmd"></pre>

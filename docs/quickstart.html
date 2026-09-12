@@ -46,6 +46,12 @@
     padding: 5px 12px; border-radius: 999px; white-space: nowrap;
   }
   .home { margin-left: auto; font-size: 17px; font-family: var(--mono); }
+  /* The same menu on every page. The page you are on is shown but not a link:
+     a link to where you already are is a small lie, and it is the one people
+     click by accident. */
+  .pages { font-family: var(--mono); font-size: 16px; color: var(--dim); }
+  .pages [aria-current="page"] { color: var(--ink); font-weight: 600; }
+
   .tagline { color: var(--dim); font-size: 23px; margin: 18px 0 0; max-width: 46em; }
 
   section {
@@ -136,7 +142,11 @@
     <div class="brand">
       <h1>evo<span class="dot">.</span>videostroll</h1>
       <span class="badge">MCP server + Claude Code skill</span>
-      <span class="home"><a href="https://evomedia.net">evomedia.net</a></span>
+      <span class="home"><nav class="pages" aria-label="Pages">
+      <span aria-current="page">quickstart</span>
+      &middot; <a href="/setup.html">setup</a>
+      &middot; <a href="/voices.html">voices</a>
+      &middot; <a href="https://evomedia.net">evomedia.net</a></nav></span>
     </div>
     <p class="tagline">An agent records a narrated walkthrough of a website. It drives the
       browser, a visible cursor follows, the narration is spoken aloud, and captions come

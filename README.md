@@ -1,6 +1,6 @@
 # evo.videostroll
 
-**alpha** · M4: packaged · MIT · the build is in [`build-version.json`](build-version.json) and on the latest git tag
+**beta** · public · MIT · the build is in [`build-version.json`](build-version.json) and on the latest git tag
 
 An open-source MCP server and Claude Code skill that lets an AI agent
 **record narrated walkthrough videos of a website** — driving the browser itself,

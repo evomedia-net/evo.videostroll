@@ -15,7 +15,7 @@
  * Interactive callers drive step by step; render() drives a whole storyboard.
  */
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Page } from "playwright";
 import { executeAction } from "./actions.js";
@@ -105,6 +105,58 @@ function stamp(): string {
   return new Date().toISOString().replace(/[-:]/g, "").replace(/\..+/, "").replace("T", "-");
 }
 
+/**
+ * A thumbnail's file name: the walkthrough's base name, the step's position,
+ * and the step's id.
+ *
+ * The base name is in there for the same reason it is on every other output -
+ * `name` exists so a second walkthrough can share an output folder without
+ * overwriting the first, and thumbnails were the one artefact that ignored it.
+ * Two differently-named walkthroughs in one folder used to fight over
+ * `01-intro.jpg`.
+ */
+export function thumbName(base: string, index: number, id: string): string {
+  return `${base}-${String(index + 1).padStart(2, "0")}-${id}.jpg`;
+}
+
+const THUMB_TAIL_RE = /^\d{2,}-.+\.jpg$/i;
+
+/** Is this file a thumbnail from an earlier render of THIS walkthrough? */
+export function isStaleThumb(name: string, base: string): boolean {
+  const prefix = `${base}-`;
+  return name.startsWith(prefix) && THUMB_TAIL_RE.test(name.slice(prefix.length));
+}
+
+/**
+ * Drop the previous render's thumbnails before writing this one's.
+ *
+ * Thumbnails are numbered by step, so inserting a step shifts every name after
+ * it and the old ones survive under their old numbers - a re-cut of an
+ * eleven-step walkthrough into twelve left eighteen files, two of them the same
+ * step from different runs and one a frame of a video that no longer existed.
+ * Nothing distinguished them but the file timestamp.
+ *
+ * That matters because `thumbs/` is not scratch: the skill tells the agent to
+ * open thumbnails to verify what it recorded, and a stale one looks exactly as
+ * authoritative as a real one. Re-rendering is the path the storyboard exists
+ * for, so this is the normal case, not an edge case.
+ *
+ * Only this walkthrough's own thumbnails go - a folder shared with another
+ * `name`, or anything a person put there, is left alone.
+ */
+async function clearThumbs(outputDir: string, base: string): Promise<void> {
+  const dir = join(outputDir, "thumbs");
+  let names: string[];
+  try {
+    names = await readdir(dir);
+  } catch {
+    return; // no folder yet, which is the usual case
+  }
+  await Promise.all(
+    names.filter((n) => isStaleThumb(n, base)).map((n) => rm(join(dir, n), { force: true })),
+  );
+}
+
 export class Session {
   readonly id: string;
   readonly outputDir: string;
@@ -162,6 +214,7 @@ export class Session {
     // Through the schema so a name with a slash in it is refused here, at
     // the boundary, rather than writing outside the output directory.
     if (o.name !== undefined) session.outputName = OutputName.parse(o.name);
+    await clearThumbs(outputDir, session.outputName);
     return session;
   }
 
@@ -227,7 +280,7 @@ export class Session {
     const durationMs = capture.endMs - capture.startMs;
     const thumbDir = join(this.outputDir, "thumbs");
     await mkdir(thumbDir, { recursive: true });
-    const thumbnail = join(thumbDir, `${String(index + 1).padStart(2, "0")}-${id}.jpg`);
+    const thumbnail = join(thumbDir, thumbName(this.outputName, index, id));
     await copyFile(capture.frames[capture.frames.length - 1].file, thumbnail);
 
     const record: StepRecord = {

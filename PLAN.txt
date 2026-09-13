@@ -1,7 +1,7 @@
 evo.videostroll — plan
 ======================
 
-Filed: 2026-09-02 · Status: M3 done 2026-09-03, M4 next · Stage: alpha v0.0.0.1.2
+Filed: 2026-09-02 · Status: M1-M4 done, public 2026-09-13 · Stage: beta — the build is in build-version.json
 
 An MCP server plus a Claude Code skill that let an AI agent record a narrated
 walkthrough video of a website: the agent drives the browser, a visible cursor

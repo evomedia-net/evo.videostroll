@@ -249,8 +249,18 @@ describe("spotting a task", () => {
 });
 
 describe("saying it out loud", () => {
-  it("spells an acronym", () => {
-    expect(speakable("SLA")).toBe("S L A");
+  // The narration becomes the caption, so a hint nobody needed is a caption
+  // nobody can read. Edge normalises acronyms, numerals and camelCase before
+  // it synthesises, so all three already arrive correct - measured, in the
+  // comment above speakable(). Only dotted names are wrong.
+  it("leaves an acronym written the way it is spelled", () => {
+    expect(speakable("SLA")).toBeNull();
+    expect(speakable("AI")).toBeNull();
+  });
+
+  it("leaves camelCase alone", () => {
+    expect(speakable("workOrder")).toBeNull();
+    expect(speakable("PascalCase")).toBeNull();
   });
 
   it("puts the dot into a dotted name", () => {
@@ -263,10 +273,6 @@ describe("saying it out loud", () => {
     const known = acronyms("The EHS module tracks incidents.");
     expect(speakable("evo.ehs", known)).toBe("evo dot e h s");
     expect(speakable("evo.ehs", new Set())).toBe("evo dot ehs");
-  });
-
-  it("separates camelCase, which the voice reads as one word", () => {
-    expect(speakable("workOrder")).toBe("work Order");
   });
 
   it("leaves an ordinary word alone", () => {
@@ -408,9 +414,14 @@ describe("scanDocs against a real server", () => {
     expect(r.tasks.map((t) => t.title)).toContain("How to schedule a visit");
   });
 
-  it("suggests how to say SLA out loud", async () => {
+  it("suggests how to say the dotted name, and leaves the plain acronym alone", async () => {
     const r = await scanDocs({ url: fixture.url }, httpFetcher());
-    expect(r.pronunciation).toContainEqual({ term: "SLA", say: "S L A" });
+    // "api" is lowercase here, and the corpus writes API in capitals under
+    // "API access" - that is the evidence that it is initials, not a word.
+    expect(r.pronunciation).toContainEqual({ term: "orchard.api", say: "orchard dot a p i" });
+    // SLA is in the glossary and reads correctly written as it is, so it earns
+    // no hint: one would only show up in the caption as "S L A".
+    expect(r.pronunciation.map((p) => p.term)).not.toContain("SLA");
   });
 
   it("reads the docs index when pointed at it, and follows only its own pages", async () => {

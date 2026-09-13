@@ -497,32 +497,47 @@ export function acronyms(corpus: string): Set<string> {
 /**
  * How to say a term out loud, or null if it already reads correctly.
  *
- * The skill's rule is "spell for the ear": the voice reads what is written, so
- * "evo.ehs" is spoken as a word unless it is written "evo dot e h s". This
- * suggests; the agent still decides. A suggestion it disagrees with costs a
- * moment, whereas the name of the product mispronounced through a whole video
- * costs the video.
+ * A hint here is not free: the narration becomes the caption, so anything
+ * respelled for the ear is read by the eye too. "M P four" on screen is worse
+ * than nothing, and it is what this function used to ask for.
+ *
+ * So the bar is evidence that the voice gets it wrong. Measured against
+ * en-US-AvaNeural, comparing total duration and the word boundaries Edge
+ * reports, the written and respelled forms are the same utterance:
+ *
+ *     an AI agent records          2112 ms   AI(375)
+ *     an A I agent records         2112 ms   A(213) I(163)
+ *     Out comes an MP4 file        2328 ms   MP4(613)
+ *     Out comes an M P four file   2328 ms   M(163) P(188) four(263)
+ *     42 English voices out of 322 3816 ms   42(625) 322(1488)
+ *     a PascalCase name here       2088 ms   PascalCase(863)
+ *     a Pascal Case name here      2112 ms   Pascal(550) Case(313)
+ *
+ * Identical to the millisecond, because Edge normalises the text before it
+ * synthesises anything. Acronyms, numerals and camelCase all arrive correct on
+ * their own, so respelling them buys the ear nothing and costs the caption.
+ *
+ * What it does get wrong is a lowercase initialism inside a dotted name - the
+ * case the `known` set exists for:
+ *
+ *     evo.ehs keeps records          evo(363) .(263) ehs(225)   <- one word
+ *     evo dot e h s keeps records    evo(363) dot(225) e h s    <- right
+ *
+ * and `evo.ai` is worse still, arriving as a single evo.ai(1275) token. That
+ * is the whole remaining job. This suggests; the agent still decides.
  */
 export function speakable(term: string, known: Set<string> = new Set()): string | null {
   const t = term.trim();
-  if (!t || /\s/.test(t)) return null;
+  // Only dotted names are ever wrong, so nothing else is worth a hint.
+  if (!t || /\s/.test(t) || !t.includes(".")) return null;
 
   const spell = (seg: string) => seg.split("").join(" ");
   const isAcronym = (seg: string) =>
     /^[A-Z]{2,5}$/.test(seg) || (/^[a-z]{2,5}$/.test(seg) && known.has(seg.toLowerCase()));
 
-  if (t.includes(".")) {
-    const parts = t.split(".").filter(Boolean);
-    if (parts.length < 2) return null;
-    return parts.map((p) => (isAcronym(p) ? spell(p.toLowerCase()) : p.toLowerCase())).join(" dot ");
-  }
-  if (/^[A-Z]{2,5}$/.test(t)) return spell(t);
-  // camelCase and PascalCase are read as one word by the voice; a space is
-  // enough to fix it and keeps the caption readable.
-  if (/^[a-z]+[A-Z][a-zA-Z]*$/.test(t) || /^[A-Z][a-z]+[A-Z][a-zA-Z]*$/.test(t)) {
-    return t.replace(/([a-z])([A-Z])/g, "$1 $2");
-  }
-  return null;
+  const parts = t.split(".").filter(Boolean);
+  if (parts.length < 2) return null;
+  return parts.map((p) => (isAcronym(p) ? spell(p.toLowerCase()) : p.toLowerCase())).join(" dot ");
 }
 
 /**

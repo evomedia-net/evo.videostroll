@@ -40,6 +40,10 @@ const TYPES = {
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  // llms.txt, and anything else plain. Without this it falls through to
+  // application/octet-stream, which makes a browser download the file instead
+  // of showing it - the opposite of what a file meant to be read is for.
+  ".txt": "text/plain; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".jpg": "image/jpeg",

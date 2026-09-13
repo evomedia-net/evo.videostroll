@@ -1,6 +1,6 @@
 ---
 name: videostroll
-description: Record a narrated walkthrough video of a website - the agent drives the browser, a visible cursor follows, its narration is spoken, and captions with timestamps come out alongside. Use when asked for a walkthrough, demo video, screen tour, or "show me how X works" as a video. Needs the evo.videostroll MCP server (tools videostroll_start, videostroll_observe, videostroll_step, videostroll_finish, videostroll_abort, videostroll_render).
+description: Record a narrated walkthrough video of a website - the agent drives the browser, a visible cursor follows, its narration is spoken, and captions with timestamps come out alongside. Use when asked for a walkthrough, demo video, screen tour, or "show me how X works" as a video. Needs the evo.videostroll MCP server (tools videostroll_docs, videostroll_start, videostroll_observe, videostroll_step, videostroll_finish, videostroll_abort, videostroll_render).
 ---
 
 videostroll — how to make a walkthrough that is worth watching

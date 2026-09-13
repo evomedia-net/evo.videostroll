@@ -90,7 +90,7 @@ re-cut.
 Two workable strategies. Recommendation first.
 
 Recommended: CDP screencast, per step
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Chromium's DevTools protocol (Page.startScreencast) pushes frames as the page
 changes, each with its own timestamp. Start it at step start, stop at step
@@ -104,7 +104,7 @@ end, encode the frames into a segment, concatenate segments at the end.
   recording a walkthrough that is no loss.
 
 Simpler fallback: Playwright recordVideo
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One continuous WebM per browser context, timestamps taken from the wall clock
 and cut into segments afterwards.
@@ -121,7 +121,7 @@ fallback is documented so the choice is reversible if the screencast proves
 troublesome on Windows.
 
 Encoding
---------
+~~~~~~~~
 
 Frames (JPEG from the screencast) → per-step MP4 via ffmpeg, using a concat
 list with per-frame durations so variable frame timing becomes a constant

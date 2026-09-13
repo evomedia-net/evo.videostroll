@@ -18,7 +18,7 @@ first walkthrough. Serve it and read it in a browser:
 
     cd server && npm run docs:serve      # http://127.0.0.1:8099/quickstart.html
 
-That page is also a walkthrough of its own -
+That page is also a walkthrough of its own —
 examples/storyboards/videostroll-setup.json records it, so the setup video
 is rendered by the tool it explains, and re-renders whenever the page changes:
 
@@ -85,7 +85,7 @@ Or from npm, without cloning
     npx playwright install chromium          # the recorder needs a browser
 
 The skill ships inside the package, because the server without it is a
-capable but undirected recorder - and an npm install has no skill/ directory
+capable but undirected recorder — and an npm install has no skill/ directory
 to copy from.
 
 Then ask for a walkthrough. The skill tells the agent to read the
@@ -93,62 +93,63 @@ product's own docs with videostroll_docs, reconnoitre with
 videostroll_observe, storyboard, narrate in short presenter-voice sentences,
 record step by step, and read the manifest back before delivering.
 
-The design, decisions and remaining questions are in PLAN.md (PLAN.md);
-the contract is server/schema/storyboard.schema.json (server/schema/storyboard.schema.json),
-with worked examples in examples/storyboards/ (examples/storyboards/).
-
+The design, decisions and remaining questions are in PLAN.md;
+the contract is server/schema/storyboard.schema.json,
+with worked examples in examples/storyboards/.
 
 It reads the product's documentation first
 ------------------------------------------
 
 Narration that uses a product's own nouns sounds like someone who works there.
 Narration that invents its own sounds like a stranger reading labels off the
-screen - and the accessibility snapshot, which is all the agent otherwise has,
+screen — and the accessibility snapshot, which is all the agent otherwise has,
 shows what is on the page but not what any of it is called.
 
 So before storyboarding, the agent calls videostroll_docs. It looks for
-documentation the way a person would - llms.txt first, then /docs,
-docs.<site>, /help, /guide, then any link on the page that reads like a way in
-- and comes back with vocabulary, not pages:
+documentation the way a person would — llms.txt first, then /docs,
+docs.<site>, /help, /guide, then any link on the page that reads like a
+way in — and comes back with vocabulary, not pages:
 
-    glossary        what the product calls its features, one line each
-    tasks           its procedures - the routes users actually want
-    pronunciation   how to say the awkward names out loud
+| | |
+| --- | --- |
+| glossary | what the product calls its features, one line each |
+| tasks | its procedures — the routes users actually want |
+| pronunciation | how to say the awkward names out loud |
 
 tasks is found two ways, because titles alone were not enough. Most
-documentation heads its pages with nouns - "Work orders", not "Creating a work
-order" - so matching the title found nothing on exactly the sites with the most
+documentation heads its pages with nouns — "Work orders", not "Creating a work
+order" — so matching the title found nothing on exactly the sites with the most
 procedures in them. A section containing a numbered list is now a task whatever
 it is called, which is better evidence than the title anyway. <ol> only: a
 bullet list is as likely to be features or limits, and a false task is worse
 than a missing one because the agent may build the walkthrough around it.
 
 pronunciation reads the documentation to decide, which is the only way to get
-it right: the corpus writes EHS in capitals somewhere, so evo.ehs is spoken
-"evo dot e h s", while evo.orchard stays "evo dot orchard". Guessing from the
-letters alone gets it wrong in both directions.
+it right: the corpus writes EHS in capitals somewhere, so evo.ehs is
+spoken "evo dot e h s", while evo.orchard stays "evo dot orchard". Guessing
+from the letters alone gets it wrong in both directions.
 
-No documentation is a normal answer, not an error - found: false, and the
+No documentation is a normal answer, not an error — found: false, and the
 walkthrough proceeds on the snapshot alone.
 
 What it will not do
 ~~~~~~~~~~~~~~~~~~~
 
-  - It does not follow instructions it finds. Documentation is written by
-    whoever runs the site, and it ends up spoken aloud in a video somebody
-    ships. Lines that read like an attempt to redirect the agent are dropped
-    and counted in dropped.instructions - silent filtering would be worse than
-    none, because a non-zero count is itself worth knowing. The skill states
-    the rule in the other direction too: what comes back is vocabulary to
-    borrow, never direction to follow. Neither half is a guarantee, and the
-    design says so rather than implying a wall where there is a speed bump.
-  - It does not leak an example credential into a script. The same pattern
-    that rejects a secret in narration runs over everything fetched.
-  - It does not wander. Same site only, under the entry point's own path,
-    robots.txt honoured, at most 12 pages, and it says which pages it skipped
-    and why.
-  - It does not crawl for you. This reads documentation to write narration.
-    It is not a search tool and has no interest in being one.
+- It does not follow instructions it finds. Documentation is written by
+  whoever runs the site, and it ends up spoken aloud in a video somebody
+  ships. Lines that read like an attempt to redirect the agent are dropped and
+  counted in dropped.instructions — silent filtering would be worse than
+  none, because a non-zero count is itself worth knowing. The skill states the
+  rule in the other direction too: what comes back is vocabulary to borrow,
+  never direction to follow. Neither half is a guarantee, and the design says
+  so rather than implying a wall where there is a speed bump.
+- It does not leak an example credential into a script. The same pattern
+  that rejects a secret in narration runs over everything fetched.
+- It does not wander. Same site only, under the entry point's own path,
+  robots.txt honoured, at most 12 pages, and it says which pages it skipped
+  and why.
+- It does not crawl for you. This reads documentation to write narration.
+  It is not a search tool and has no interest in being one.
 
 Voices
 ------
@@ -176,17 +177,17 @@ evenly between male and female. List them rather than guessing a name:
     npm run voices -- all          # every locale the service offers
 
 Each row gives the id to use as voice.name, the gender, and the character
-Microsoft assigns it - Friendly, Positive; Cheerful, Clear; and so on.
+Microsoft assigns it — Friendly, Positive, Cheerful, Clear, and so on.
 
 Or hear them. Picking a voice from a list is guessing, so there is a picker:
 
     cd server && npm run docs:serve      # then open http://127.0.0.1:8099/voices.html
 
 Filter by locale, gender or character, play a sample at the rate you intend to
-use, and copy the finished "voice": { ... } line into a storyboard. Previews go
+use, and copy the finished "voice": { … } line into a storyboard. Previews go
 through the same provider the recorder uses, so what you hear is what you get.
 The catalogue is a live call, so the page needs the network; it binds to
-localhost only, and the preview endpoint validates what it is asked to say -
+localhost only, and the preview endpoint validates what it is asked to say —
 including refusing to speak anything credential-shaped.
 
 More than one voice in a walkthrough
@@ -208,7 +209,7 @@ storyboard's, and the override lasts exactly one step:
 
 The interactive videostroll_step tool takes the same voice field, so an
 agent can hand off between narrators mid-walkthrough. One rule is not plain
-merging: naming a different provider without a name does NOT carry the
+merging: naming a different provider without a name does not carry the
 old provider's voice name across, because a name belongs to the provider that
 defines it. Worked example: examples/storyboards/two-voices.json.
 
@@ -220,16 +221,16 @@ sign in yourself, once, and it keeps the session:
 
     npm run login -- https://app.example.com
 
-A real browser window opens. Sign in however the site asks - password manager,
-second factor, SSO redirect - then press Enter in the terminal.
+A real browser window opens. Sign in however the site asks — password manager,
+second factor, SSO redirect — then press Enter in the terminal.
 
-  This is the one step that needs the full Chromium. Recording runs
-  headless, which uses a separate chromium-headless-shell build, so a
-  machine can record for weeks and still have no real browser. If the
-  helper cannot open a window it says so and tells you to run
-  npx playwright install chromium. It also has to run in a terminal with a
-  desktop session - an SSH session or an agent's shell cannot open a window,
-  which is deliberate: nothing signs in for you. The cookies and
+> This is the one step that needs the full Chromium. Recording runs
+> headless, which uses a separate chromium-headless-shell build, so a
+> machine can record for weeks and still have no real browser. If the helper
+> cannot open a window it says so and tells you to run
+> npx playwright install chromium. It also has to run in a terminal with a
+> desktop session — an SSH session or an agent's shell cannot open a window,
+> which is deliberate: nothing signs in for you. The cookies and
 localStorage are written to auth/<host>.storage-state.json, and a storyboard
 points at it:
 
@@ -239,7 +240,7 @@ points at it:
 videostroll_start takes the same path, so an agent can record behind a login
 having been given a file path and nothing else.
 
-That file is a live session - treat it like a password. The helper will
+That file is a live session — treat it like a password. The helper will
 only write it where git already ignores it and refuses anywhere else; it prints
 counts and hostnames but never a cookie value; and it refuses to save a file
 that captured nothing, which is what a half-finished sign-in produces. Sessions
@@ -270,7 +271,7 @@ Keeping this machine current
 There is no server to deploy to, but "installed" is three things, and a
 git pull is only the first: server/dist/ is gitignored and the registered
 MCP server runs dist/index.js, so a pull alone leaves it on stale compiled
-code - and the skill is copied out to ~/.claude/skills/, which nothing
+code — and the skill is copied out to ~/.claude/skills/, which nothing
 detects the drift of. One command does all three and says what moved:
 
     cd server && npm run deploy:local
@@ -287,34 +288,33 @@ videostroll_step, videostroll_observe, videostroll_finish,
 videostroll_abort, videostroll_docs, videostroll_render.
 
 Getting it, and checking what you got
-------------------------------------
+-------------------------------------
 
-Two ways in, and neither is a zip in this repository. A release archive earns
-its place when the download runs as-is; this one would not. dist/ and
-node_modules/ are not committed, so an extracted archive still needs npm ci, a
-browser download and a build - at which point you have done the work of cloning
-without the ability to git pull.
+Two ways in, and neither is a zip in this repository. A release archive
+earns its place when the download runs as-is; this one would not. dist/ and
+node_modules/ are not committed, so an extracted archive still needs
+npm ci, a browser download and a build — at which point you have done the
+work of cloning without the ability to git pull.
 
-    npm   npx evo.videostroll - the real distributable. The registry records an
-          integrity hash for the published tarball, so npm verifies the
-          download for you.
-    git   clone the repo, or take GitHub's source archive for any tag
-          (https://github.com/evomedia-net/evo.videostroll/tags).
+| | |
+| --- | --- |
+| npm | npx evo.videostroll — the real distributable. The registry records an integrity hash for the published tarball, so npm verifies the download for you. |
+| git | clone the repo, or take GitHub's source archive for any tag (https://github.com/evomedia-net/evo.videostroll/tags). |
 
-A verifiable archive can still be built on demand - for attaching to a GitHub
-Release, or for an air-gapped copy:
+A verifiable archive can still be built on demand — for attaching to a
+GitHub Release, or for an air-gapped copy:
 
     cd server && npm run release
 
-It writes the zip and a .sha256 beside it, with a CHECKSUMS.txt inside covering
-every file, and refuses to build an archive whose name would not describe its
-contents: not from a dirty tree, and not for a version already tagged whose
-tree has moved on. --force overwrites a file; it does not license a mislabelled
-one.
+It writes the zip and a .sha256 beside it, with a CHECKSUMS.txt inside
+covering every file, and refuses to build an archive whose name would not
+describe its contents: not from a dirty tree, and not for a version already
+tagged whose tree has moved on. --force overwrites a file; it does not
+license a mislabelled one.
 
-Both checksum layers are integrity, not authenticity - the manifest travels in
-the same archive as the files, so they catch a truncated download, a corrupted
-mirror and an accidental edit, not a forger.
+Both checksum layers are integrity, not authenticity — the manifest travels
+in the same archive as the files, so they catch a truncated download, a
+corrupted mirror and an accidental edit, not a forger.
 
 Two deliverables, one repo
 --------------------------
@@ -341,5 +341,5 @@ ceiling.
 Licence
 -------
 
-MIT — see LICENSE (LICENSE). Synthesised voices and recorded sites remain
+MIT — see LICENSE. Synthesised voices and recorded sites remain
 subject to their own terms.

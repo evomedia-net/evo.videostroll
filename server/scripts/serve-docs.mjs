@@ -48,6 +48,8 @@ const TYPES = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".webp": "image/webp",
+  // The demo video. A <video> element will not play octet-stream.
+  ".mp4": "video/mp4",
 };
 
 // ── the picker's two endpoints ───────────────────────────────────────────────

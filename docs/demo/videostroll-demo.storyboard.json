@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "title": "VideoStroll — a walkthrough of its own docs",
+  "url": "http://127.0.0.1:8099/quickstart.html",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "deviceScaleFactor": 1
+  },
+  "voice": {
+    "provider": "edge",
+    "name": "en-US-AvaNeural",
+    "rate": 1,
+    "wordsPerMinute": 150
+  },
+  "captions": "both",
+  "steps": [
+    {
+      "id": "intro",
+      "narration": "This is the documentation for VideoStroll, a tool that lets an AI agent record narrated walkthroughs of a website. This video was recorded by the tool it is describing.",
+      "actions": [],
+      "chapter": "What it is"
+    },
+    {
+      "id": "menu",
+      "narration": "There are three pages. The quickstart you are looking at, a setup form, and a voice picker.",
+      "actions": [
+        {
+          "type": "move",
+          "target": {
+            "selector": "nav.pages"
+          },
+          "durationMs": 700
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "nav.pages"
+          },
+          "holdMs": 1800
+        }
+      ]
+    },
+    {
+      "id": "prereqs",
+      "narration": "Getting started needs one thing: Node, version 20 or newer. The video encoder ships inside the package, so there is nothing else to install.",
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#prereqs"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#prereqs p strong"
+          },
+          "holdMs": 2000
+        }
+      ],
+      "chapter": "Setting it up"
+    },
+    {
+      "id": "copy-button",
+      "narration": "Every command on the page has a copy button, so nothing has to be retyped.",
+      "actions": [
+        {
+          "type": "move",
+          "target": {
+            "selector": "#prereqs .copy"
+          },
+          "durationMs": 800
+        },
+        {
+          "type": "hover",
+          "target": {
+            "selector": "#prereqs .copy"
+          },
+          "holdMs": 1200
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#prereqs .snip"
+          },
+          "holdMs": 1500
+        }
+      ]
+    },
+    {
+      "id": "ask",
+      "narration": "Once it is installed, you ask for a walkthrough in plain words. The agent reads the page, drafts the steps, records them one at a time, and checks what it recorded against what it said.",
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#use"
+          },
+          "durationMs": 1200
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#use pre.say"
+          },
+          "holdMs": 2500
+        }
+      ],
+      "chapter": "Asking for a walkthrough"
+    },
+    {
+      "id": "docs",
+      "narration": "Before writing a word of narration, the agent looks for the product's own documentation. What comes back is vocabulary, not pages — the product's nouns, its procedures, and how to say the awkward names aloud.",
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#docs"
+          },
+          "durationMs": 1100
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#docs ul"
+          },
+          "holdMs": 2600
+        }
+      ],
+      "chapter": "Reading the product's docs"
+    },
+    {
+      "id": "to-setup",
+      "narration": "If writing that sentence is the part you would rather skip, the setup page asks the questions instead.",
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "header"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "move",
+          "target": {
+            "selector": "nav.pages a[href=\"/setup.html\"]"
+          },
+          "durationMs": 700
+        },
+        {
+          "type": "click",
+          "target": {
+            "selector": "nav.pages a[href=\"/setup.html\"]"
+          },
+          "settleMs": 1200
+        }
+      ],
+      "chapter": "The setup form"
+    },
+    {
+      "id": "fill-form",
+      "narration": "Answer what you know, in plain words. Nothing is saved or sent anywhere — it all happens in your browser.",
+      "actions": [
+        {
+          "type": "click",
+          "target": {
+            "selector": "#url"
+          },
+          "settleMs": 200
+        },
+        {
+          "type": "type",
+          "target": {
+            "selector": "#url"
+          },
+          "text": "https://example.com",
+          "msPerChar": 55
+        },
+        {
+          "type": "type",
+          "target": {
+            "selector": "#title"
+          },
+          "text": "A tour of Example",
+          "msPerChar": 45
+        }
+      ]
+    },
+    {
+      "id": "either-or",
+      "narration": "The right side fills in as you type, and it offers two ways to start. You take one, not both.",
+      "actions": [
+        {
+          "type": "move",
+          "target": {
+            "selector": ".card.choose"
+          },
+          "durationMs": 700
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": ".card.choose"
+          },
+          "holdMs": 2200
+        }
+      ]
+    },
+    {
+      "id": "voices",
+      "narration": "The third page is the voice picker. Filter by locale, gender or character, and play a sample before you commit to one.",
+      "actions": [
+        {
+          "type": "move",
+          "target": {
+            "selector": "nav.pages a[href=\"/voices.html\"]"
+          },
+          "durationMs": 700
+        },
+        {
+          "type": "click",
+          "target": {
+            "selector": "nav.pages a[href=\"/voices.html\"]"
+          },
+          "settleMs": 1800
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": ".controls"
+          },
+          "holdMs": 2000
+        }
+      ],
+      "chapter": "Choosing a voice"
+    },
+    {
+      "id": "ava",
+      "narration": "42 English voices out of 322. This one, Ava, is the voice you have been listening to.",
+      "actions": [
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "tr:has-text(\"en-US-AvaNeural\")"
+          },
+          "durationMs": 900
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "tr:has-text(\"en-US-AvaNeural\")"
+          },
+          "holdMs": 2500
+        }
+      ]
+    },
+    {
+      "id": "outputs",
+      "narration": "Out comes an MP4, captions as a file and burned in, and the storyboard that produced it. When the site changes, you edit the steps that changed and render again, rather than recording the whole thing twice.",
+      "actions": [
+        {
+          "type": "goto",
+          "url": "http://127.0.0.1:8099/quickstart.html",
+          "waitUntil": "load"
+        },
+        {
+          "type": "scroll",
+          "target": {
+            "selector": "#output"
+          },
+          "durationMs": 1200
+        },
+        {
+          "type": "highlight",
+          "target": {
+            "selector": "#output .grid"
+          },
+          "holdMs": 3000
+        }
+      ],
+      "chapter": "What you get"
+    }
+  ]
+}

@@ -258,7 +258,6 @@ skill/SKILL.md — a draft is in the repo. It teaches:
     ├── skill/                  SKILL.md (+ .txt)       ← draft written
     ├── examples/storyboards/   example-com.json        ← written
     ├── docs/                   user docs, once there is a user surface
-    ├── releases/               versioned zips + checksums (fleet rule)
     ├── build-version.json      v0.0.0.1.0
     ├── PLAN.md / PLAN.txt      this
     └── README.md / README.txt
@@ -303,7 +302,8 @@ registry wants to be npx-able. Confirming in § Questions.
 ---------------------
 
 - Versioning: build-version.json string form (zbump-compatible), alpha
-  v0.0.0.1.x, annotated tag per release, zip in releases/.
+  v0.0.0.1.x, annotated tag per release. No committed zip: npm is the
+  distributable, and an extracted archive would not run without a build.
 - Dashboard: row added in versions/ the same session the repo was
   created.
 - Twins: every .md has a .txt, generated with the reference renderer
@@ -324,7 +324,7 @@ registry wants to be npx-able. Confirming in § Questions.
 | M1 | Record | ✅ 2026-09-02. start / step / finish with the cursor overlay and the silent provider produce a captioned MP4 from the fixture site; 23 tests, both risks retired — the cursor is in the captured pixels (clip-compare), and the MP4's duration equals the sum of the steps within one frame |
 | M2 | Speak | ✅ 2026-09-03. edge and piper providers; captions aligned to the engine's word boundaries (per sentence, with per-sentence fallback); burn-in proven under test; the first real walkthrough of www — 7 steps, 62 s, every cue engine-timed, zero narration-vs-page mismatches |
 | M3 | Direct | ✅ 2026-09-03. The MCP surface driven end to end by a real stdio client — observe, choose a selector from the snapshot, step, finish, abort, and the credential guard at the tool boundary; interactive/batch parity proven (an emitted storyboard re-renders to the same step ids, chapters, cue count and durations within 600 ms); the skill finalised with a manifest-keyed verification checklist and an install path |
-| M4 | Ship | docs, npx install path, releases zip, public repo, announcement |
+| M4 | Ship | docs, npx install path, public repo, announcement |
 
 M1 is the risk retirement: cursor-in-frame and exact timestamps are the two
 things that could send us back to the fallback strategy, and both are proven

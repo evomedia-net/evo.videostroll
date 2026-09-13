@@ -242,14 +242,55 @@ export interface Heading {
   steps: number;
 }
 
-const entities: Record<string, string> = {
-  "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&apos;": "'", "&nbsp;": " ",
+/**
+ * Entities, decoded because the text here is SPOKEN, not rendered.
+ *
+ * Everything this file extracts ends up in a glossary handed to an agent as
+ * the words to narrate with - so a term still carrying `&mdash;` is a term the
+ * voice will try to pronounce, and it will be burned into the captions. This
+ * used to hold seven entries, which meant `&amp;` decoded and `&rsquo;` did
+ * not: the partial job was worse than none, because it looked handled.
+ *
+ * The list is typography-first, because that is what a hand-written docs page
+ * is full of - and hand-written docs pages are exactly the sites this feature
+ * targets. Anything not here is left alone rather than guessed at.
+ */
+const ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  mdash: "—", ndash: "–", hellip: "…", middot: "·", bull: "•",
+  lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”",
+  sbquo: "‚", bdquo: "„", prime: "′", Prime: "″",
+  laquo: "«", raquo: "»", lsaquo: "‹", rsaquo: "›",
+  ensp: " ", emsp: " ", thinsp: " ", shy: "",
+  copy: "©", reg: "®", trade: "™", deg: "°", sect: "§", para: "¶",
+  times: "×", divide: "÷", plusmn: "±", minus: "−",
+  frac12: "½", frac14: "¼", frac34: "¾",
+  euro: "€", pound: "£", yen: "¥", cent: "¢",
+  larr: "←", rarr: "→", harr: "↔",
+  le: "≤", ge: "≥", ne: "≠",
 };
 
+/** A numeric reference, or null if it does not name a character worth emitting. */
+function codePoint(n: number): string | null {
+  // Lone surrogates are not characters; emitting one produces a broken string
+  // that survives all the way to the caption file.
+  if (!Number.isInteger(n) || n < 1 || n > 0x10ffff) return null;
+  if (n >= 0xd800 && n <= 0xdfff) return null;
+  return String.fromCodePoint(n);
+}
+
+/**
+ * One pass, deliberately: `&amp;mdash;` is text that means the literal string
+ * "&mdash;", and decoding twice would turn it into an em dash the page never
+ * showed.
+ */
 function decode(s: string): string {
-  return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&[a-z]+;|&#39;/gi, (e) => entities[e.toLowerCase()] ?? e);
+  return s.replace(/&(?:#(\d+)|#x([0-9a-f]+)|([a-z][a-z0-9]*));/gi, (whole, dec, hex, name) => {
+    if (dec !== undefined) return codePoint(Number(dec)) ?? whole;
+    if (hex !== undefined) return codePoint(parseInt(hex, 16)) ?? whole;
+    // Exact first: &Prime; and &prime; are different characters.
+    return ENTITIES[name] ?? ENTITIES[name.toLowerCase()] ?? whole;
+  });
 }
 
 /** Strip tags to readable text, keeping paragraph boundaries. */

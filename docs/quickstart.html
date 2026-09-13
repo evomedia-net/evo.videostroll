@@ -119,6 +119,13 @@
     background: var(--code-bg); border: 1px solid var(--edge);
     padding: 2px 7px; border-radius: 6px; color: var(--ink);
   }
+  /* The demo plays at whatever width the column is; 16:9 is reserved up front
+     so the page does not jump when the metadata arrives. */
+  .demo video {
+    display: block; width: 100%; aspect-ratio: 16 / 9; margin-top: 20px;
+    background: var(--code-bg);
+    border: 1px solid var(--edge); border-radius: 10px;
+  }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 34px; margin-top: 20px; }
   .out { border-left: 3px solid var(--accent-dim); padding-left: 18px; }
   .out b { display: block; font-family: var(--mono); font-size: 17px; color: var(--accent); }
@@ -152,6 +159,23 @@
       browser, a visible cursor follows, the narration is spoken aloud, and captions come
       out with timestamps.</p>
   </header>
+
+  <section id="demo" class="demo">
+    <h2>See it first</h2>
+    <p>This is the tool's own output &mdash; a walkthrough of the three pages you are
+      looking at, <strong>recorded, narrated and captioned in one pass</strong>. Twelve
+      steps, seven chapters, a minute and three quarters. Nothing was edited afterwards,
+      and the captions below are the file it wrote, burned in.</p>
+    <video controls preload="metadata" playsinline>
+      <source src="/demo/videostroll-demo.mp4" type="video/mp4">
+      Your browser will not play this inline &mdash;
+      <a href="/demo/videostroll-demo.mp4">download the demo video</a> instead.
+    </video>
+    <p>The storyboard that produced it is beside it:
+      <a href="/demo/videostroll-demo.storyboard.json">videostroll-demo.storyboard.json</a>.
+      That file is the point &mdash; when this site changes, the steps that changed get
+      edited and it renders again, rather than being recorded a second time.</p>
+  </section>
 
   <section id="prereqs">
     <h2><span class="n">1</span> What you need</h2>

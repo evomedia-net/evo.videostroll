@@ -8,6 +8,19 @@ speaking as it goes, with a visible cursor and timestamped captions.
 
 The agent decides what to show and what to say. The tool makes it a video.
 
+## See it first
+
+[**`docs/demo/videostroll-demo.mp4`**](docs/demo/videostroll-demo.mp4) — the tool's
+own output: a walkthrough of this project's documentation site, recorded, narrated
+and captioned in one pass. Twelve steps, seven chapters, a minute and three
+quarters, nothing edited afterwards.
+
+Beside it is
+[`videostroll-demo.storyboard.json`](docs/demo/videostroll-demo.storyboard.json),
+the storyboard that produced it. That file is the point: when the site changes,
+the steps that changed get edited and it renders again rather than being
+recorded a second time.
+
 ## Quickstart
 
 New here? `docs/quickstart.html` is the setup, start to finish, on one page:

@@ -18,6 +18,17 @@ recordings/
 *.mkv
 *.wav
 *.mp3
+
+# One exception: the demo. It is not a render lying around, it is a deliverable
+# - the first thing a stranger opening a public repo wants, and the only honest
+# way to show what the tool produces. Its storyboard is committed beside it, so
+# it stays regenerable.
+#
+# It is ~9 MB and git history is permanent, so RE-CUTS ACCUMULATE: replacing it
+# does not reclaim the old copy. If the demo starts changing often, move it to a
+# GitHub Release asset instead of adding a second and a third here.
+!docs/demo/
+!docs/demo/*.mp4
 frames/
 
 # Playwright

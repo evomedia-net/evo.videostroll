@@ -1,0 +1,21 @@
+# evo.videostroll
+
+> An MCP server and Claude Code skill that records a narrated walkthrough video
+> of a website. An agent drives the browser, a visible cursor follows, the
+> narration is spoken aloud, and captions come out with timestamps beside the
+> video.
+
+## Docs
+
+- [Quickstart](/quickstart.html): How to install it, register the server, and ask for a walkthrough in plain words.
+- [Set up a walkthrough](/setup.html): A form that writes the settings for you - the website, the file name, the resolution, the voice - so there is no JSON to edit by hand.
+- [Voices](/voices.html): Every voice the recorder can speak with, filtered by locale, gender and character, each with a sample to play.
+
+## Vocabulary
+
+- **storyboard** - the ordered list of steps a walkthrough is made of. Every recording writes one, which is what makes the next version a re-cut instead of a redo.
+- **step** - one idea and the action that demonstrates it: a line of narration, plus what the cursor does while it is spoken.
+- **chapter** - a named group of steps. They become the video's chapter list.
+- **cue** - one caption line, timed to the words the voice actually spoke rather than to an estimate.
+- **manifest** - the JSON written beside the video recording what was captured: steps, cues, chapters and durations. It is what a walkthrough is checked against.
+- **docs scan** - the pass that reads a product's own documentation before any narration is written, and returns its vocabulary rather than its pages.

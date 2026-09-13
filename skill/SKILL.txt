@@ -66,8 +66,8 @@ documentation itself:
     routes real users care about, already chosen by someone who had to think
     about it. A walkthrough that follows one is usually the walkthrough that
     was wanted.
-  - pronunciation - how to say the awkward names out loud. Apply these when
-    you write the narration; see "Spell for the ear" below.
+  - pronunciation - how to say a dotted product name out loud. Apply these
+    when you write the narration; see "Respell only a dotted name" below.
 
 found: false is a normal answer. Plenty of products have no docs, and a
 walkthrough of one is not worse - you just have only the snapshot to go on, so
@@ -114,11 +114,16 @@ subject — they become the video's chapter list.
 - Present tense, active voice. "The header stays put when you scroll."
 - Short. A sentence you would not say out loud is a sentence that will
   sound wrong when it is.
-- Spell for the ear. The voice reads what you write: "evo dot e h s", not
-  "evo.ehs"; "Ask A I", not "Ask AI". Captions show the spoken form too, so
-  keep it readable. videostroll_docs suggests these in pronunciation - it
-  reads the docs to decide, so it knows "ehs" is initials and "orchard" is a
-  word.
+- Write acronyms the way they are spelled. MP4, AI, PDF, 322 - the voice
+  already reads all of these correctly, because the service normalises the
+  text before it synthesises. "M P four" and "MP4" are the same utterance, to
+  the millisecond. What differs is the caption, and "M P four" on screen is
+  just wrong. The same goes for camelCase.
+- Respell only a dotted name. That is the one thing the voice really does get
+  wrong: evo.ehs comes out as one word, "ehz", and evo.ai as a single mangled
+  token - so write "evo dot e h s". videostroll_docs suggests these in
+  pronunciation, and it reads the docs to decide, so it knows "ehs" is
+  initials and "orchard" is a word.
 - Never say a secret. No passwords, tokens, keys, internal hostnames,
   personal email addresses, or anything from an .env. If it is on screen,
   scroll it off or pick a different page.

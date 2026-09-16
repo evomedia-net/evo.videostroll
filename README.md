@@ -27,6 +27,15 @@ New here? `docs/quickstart.html` is the setup, start to finish, on one page:
 what you need, install, register the server, install the skill, ask for your
 first walkthrough. Serve it and read it in a browser:
 
+**Windows · PowerShell**
+
+```powershell
+cd server
+npm run docs:serve      # http://127.0.0.1:8099/quickstart.html
+```
+
+**macOS · Linux · Git Bash · WSL**
+
 ```bash
 cd server && npm run docs:serve      # http://127.0.0.1:8099/quickstart.html
 ```
@@ -34,6 +43,15 @@ cd server && npm run docs:serve      # http://127.0.0.1:8099/quickstart.html
 That page is also a walkthrough of its own —
 `examples/storyboards/videostroll-setup.json` records it, so the setup video
 is rendered by the tool it explains, and re-renders whenever the page changes:
+
+**Windows · PowerShell**
+
+```powershell
+cd server
+npm run render -- ../examples/storyboards/videostroll-setup.json out/
+```
+
+**macOS · Linux · Git Bash · WSL**
 
 ```bash
 cd server && npm run render -- ../examples/storyboards/videostroll-setup.json out/
@@ -72,6 +90,17 @@ voice — is in `examples/storyboards/`.
 
 Build once, register the server, install the skill:
 
+**Windows · PowerShell**
+
+```powershell
+cd server
+npm ci
+npx playwright install chromium
+npm run build
+```
+
+**macOS · Linux · Git Bash · WSL**
+
 ```bash
 cd server && npm ci && npx playwright install chromium && npm run build
 ```
@@ -85,6 +114,15 @@ Claude Code — in a project's `.mcp.json` (or `~/.claude.json` for every projec
   }
 }
 ```
+
+**Windows · PowerShell**
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\.claude\skills\videostroll" | Out-Null
+Copy-Item skill\SKILL.md "$HOME\.claude\skills\videostroll\SKILL.md"
+```
+
+**macOS · Linux · Git Bash · WSL**
 
 ```bash
 mkdir -p ~/.claude/skills/videostroll && cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md
@@ -201,6 +239,15 @@ Microsoft assigns it — `Friendly, Positive`, `Cheerful, Clear`, and so on.
 
 **Or hear them.** Picking a voice from a list is guessing, so there is a picker:
 
+**Windows · PowerShell**
+
+```powershell
+cd server
+npm run docs:serve      # then open http://127.0.0.1:8099/voices.html
+```
+
+**macOS · Linux · Git Bash · WSL**
+
 ```bash
 cd server && npm run docs:serve      # then open http://127.0.0.1:8099/voices.html
 ```
@@ -303,6 +350,17 @@ MCP server runs `dist/index.js`, so a pull alone leaves it on stale compiled
 code — and the skill is copied out to `~/.claude/skills/`, which nothing
 detects the drift of. One command does all three and says what moved:
 
+**Windows · PowerShell**
+
+```powershell
+cd server
+npm run deploy:local
+npm run deploy:local -- --check     # report what is stale, change nothing
+npm run deploy:local -- --no-pull   # build and copy this branch as it is
+```
+
+**macOS · Linux · Git Bash · WSL**
+
 ```bash
 cd server && npm run deploy:local
 npm run deploy:local -- --check     # report what is stale, change nothing
@@ -333,6 +391,15 @@ work of cloning without the ability to `git pull`.
 
 A verifiable archive can still be built **on demand** — for attaching to a
 GitHub Release, or for an air-gapped copy:
+
+**Windows · PowerShell**
+
+```powershell
+cd server
+npm run release
+```
+
+**macOS · Linux · Git Bash · WSL**
 
 ```bash
 cd server && npm run release

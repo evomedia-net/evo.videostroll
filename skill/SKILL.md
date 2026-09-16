@@ -201,6 +201,15 @@ site changes, edit the steps that changed and `videostroll_render` again.
 The skill lives in this repo and is copied out — edit here, then copy, never
 the reverse.
 
+**Windows · PowerShell**
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\.claude\skills\videostroll" | Out-Null
+Copy-Item skill\SKILL.md "$HOME\.claude\skills\videostroll\SKILL.md"
+```
+
+**macOS · Linux · Git Bash · WSL**
+
 ```bash
 mkdir -p ~/.claude/skills/videostroll
 cp skill/SKILL.md ~/.claude/skills/videostroll/SKILL.md

@@ -32,6 +32,23 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 /** Breathing room after the voice or the last action, so a step never ends on the frame the action landed. */
 export const STEP_TAIL_MS = 300;
 
+/**
+ * The recording is the viewport, so the browser's own full screen is refused.
+ * When a page took it, the screencast's frames changed shape and came out
+ * squashed into half the picture, though screenshots of the same moment were
+ * fine. Pages that offer full screen nearly always keep an in-page overlay for
+ * when the request is refused (evo.polaris does), so the overlay is what gets
+ * recorded. fullscreenEnabled is left alone so the page still shows its button.
+ */
+export const NO_FULLSCREEN_INIT_SCRIPT = `
+(() => {
+  const refuse = () => Promise.reject(new TypeError("full screen is off while recording"));
+  for (const name of ["requestFullscreen", "webkitRequestFullscreen"]) {
+    if (Element.prototype[name]) Element.prototype[name] = refuse;
+  }
+})();
+`;
+
 export interface StartOptions {
   /** Base name for the output files. Defaults to "walkthrough". */
   name?: string;
@@ -203,6 +220,7 @@ export class Session {
       storageState: o.storageState,
     });
     await context.addInitScript(CURSOR_INIT_SCRIPT);
+    await context.addInitScript(NO_FULLSCREEN_INIT_SCRIPT);
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
     await page.goto(o.url, { waitUntil: "load" });

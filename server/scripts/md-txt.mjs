@@ -45,19 +45,58 @@ const SKIP = new Set(["node_modules", "dist", ".git", ".claude", "server", "rele
 /** Setext-style underlines by heading depth; `=`, `-` and `~` are what the repo's twins already used. */
 const UNDERLINE = ["=", "-", "~", ".", ".", "."];
 
-/** Strip the inline markup, keeping the words and the link targets. */
+/** HTML element names, so a tag can be told from prose that merely looks like
+ * one. An allowlist and not `</?\w+>`, because these docs are full of
+ * placeholders written the same way - `docs.<site>`, `auth/<host>.storage-state.json`,
+ * `npm run login -- <url>` - and deleting those would take words out of the
+ * twin, which is the one thing it must never do. */
+const HTML = new RegExp(
+  "</?(?:picture|source|img|div|span|br|p|a|table|thead|tbody|tfoot|tr|td|th" +
+    "|details|summary|sup|sub|kbd|em|strong|code|pre|hr|h[1-6]|ul|ol|li" +
+    "|blockquote|center|figure|figcaption|video|audio|iframe|small|b|i|u|s)" +
+    "(?:\\s[^<>]*)?/?>",
+  "g",
+);
+
+/**
+ * Strip the inline markup, keeping the words and the link targets.
+ *
+ * Inline code is lifted out FIRST and put back last. What is inside backticks
+ * is content, not markup, and running the emphasis rules over it corrupts it:
+ * a glob documented as `Civil Parties*JWEB*.txt` loses its asterisks to the
+ * italic rule and becomes "Civil PartiesJWEB.txt", two words glued into one.
+ * This repo documents `role=button[name="Save"]` and `steps[i].title` the same
+ * way. Same reasoning for the HTML rules - `<ol>`, written here as an example
+ * of what the docs scanner looks for, is a word and not a tag.
+ */
 function inline(text) {
-  return text
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1") // images -> alt text
-    // Links -> text (url), except when the text already is the url: README
-    // links `build-version.json` to itself, and "build-version.json
-    // (build-version.json)" tells the reader nothing twice. The comparison
-    // ignores inline-code markers, because that link is written with them
-    // ([`build-version.json`](build-version.json)) and they come off below.
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => (text.replace(/`/g, "") === url ? text : `${text} (${url})`))
-    .replace(/\*\*([^*]+)\*\*/g, "$1") // bold
-    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "$1") // italic
-    .replace(/`([^`]+)`/g, "$1"); // inline code
+  const code = [];
+  let out = text.replace(/`([^`]+)`/g, (_, body) => `\u0000${code.push(body) - 1}\u0000`);
+  const restore = (s) => s.replace(/\u0000(\d+)\u0000/g, (_, i) => code[Number(i)]);
+
+  // An <img> carries its words in alt=, exactly as a markdown image does.
+  out = out.replace(/<img\b[^<>]*?\balt=["']([^"']*)["'][^<>]*>/g, "$1");
+  out = out.replace(HTML, "");
+  out = out.replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1"); // images -> alt text
+  // Links -> text (url), except when the text already is the url: the README
+  // links `build-version.json` to itself, and SECURITY.md links dev@evomedia.net
+  // to mailto:dev@evomedia.net. Either read as "x (x)", which tells the reader
+  // nothing twice. Compared after putting the code back, because such a link is
+  // usually written with backticks around its text.
+  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, shown, url) => {
+    const bare = restore(shown);
+    const target = restore(url);
+    return bare === target || target === `mailto:${bare}` ? shown : `${shown} (${url})`;
+  });
+  out = out.replace(/\*\*([^*]+)\*\*/g, "$1"); // bold
+  out = out.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "$1"); // italic
+  // Strikethrough, same class as the two above. Left in place, its markers read
+  // as punctuation AND collide with the `~` a third-level heading is underlined
+  // with. Safe unconditionally: no document in this repo - or anywhere in the
+  // fleet - uses `~~~` as a code fence, which is the one thing this would
+  // disturb, and a tilde inside backticks is already lifted out of reach.
+  out = out.replace(/~~([^~]+)~~/g, "$1"); // strikethrough
+  return restore(out);
 }
 
 /** Render one markdown document to its plain-text form. */
@@ -97,7 +136,12 @@ export function render(md) {
       out.push(text, UNDERLINE[heading[1].length - 1].repeat(text.length));
       continue;
     }
-    out.push(inline(line));
+    const rendered = inline(line);
+    // A line that was only a tag - <picture>, </picture>, a bare <source> -
+    // leaves nothing behind once the HTML rules have run. Emitting the blank
+    // would turn one HTML block into a run of empty lines mid-paragraph.
+    if (line.trim() && !rendered.trim()) continue;
+    out.push(rendered);
   }
 
   return `${out.join("\n").replace(/\n{3,}/g, "\n\n").trim()}\n`;

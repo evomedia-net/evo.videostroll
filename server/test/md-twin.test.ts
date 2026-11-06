@@ -69,6 +69,42 @@ describe("the plain-text twins are generated, and in sync", () => {
     // The README writes that self-link with inline-code markers, which come
     // off after the link is expanded - so the comparison has to ignore them.
     expect(render("See [`build-version.json`](build-version.json).")).toContain("See build-version.json.");
+    // SECURITY.md links the address to itself through mailto:, which is the
+    // same thing said twice once the scheme is taken off.
+    expect(render("email [dev@evomedia.net](mailto:dev@evomedia.net), not a list").trim()).toBe(
+      "email dev@evomedia.net, not a list",
+    );
+    // A different target is information, so both halves are kept.
+    expect(render("[the policy](https://example.net/p)").trim()).toBe("the policy (https://example.net/p)");
+  });
+
+  // What is inside backticks is content, not markup: running the emphasis and
+  // HTML rules over it corrupts the thing being documented. Each of these had
+  // already been rendered wrong somewhere in the fleet - a glob written as
+  // `Civil Parties*JWEB*.txt` came out as "Civil PartiesJWEB.txt", two words
+  // glued into one.
+  it("treats inline code as content, not markup", () => {
+    expect(render("`Civil Parties*JWEB*.txt` is a file")).toContain("Parties*JWEB*.txt");
+    expect(render("A section containing `<ol>` only")).toContain("<ol>");
+    expect(render("Selectors look like `role=button[name=\"Save\"]`")).toContain('role=button[name="Save"]');
+    expect(render("The manifest names `steps[i].title`")).toContain("steps[i].title");
+    expect(render("Run `a~~b~~c` now")).toContain("a~~b~~c");
+  });
+
+  // They read as punctuation, and `~` is also what underlines a third-level
+  // heading - so a struck-out phrase looks like markup in the one file whose
+  // job is to have none.
+  it("strips strikethrough markers", () => {
+    expect(render("~~old~~ -> new").trim()).toBe("old -> new");
+  });
+
+  // Matched against real element names, never `</?\w+>`: these docs write
+  // placeholders the same way, and a generic pattern deletes those words.
+  it("leaves only the words of a raw HTML block", () => {
+    const out = render('<picture><source srcset="a.png"><img src="b.png" alt="evomedia.net"></picture>');
+    expect(out.trim()).toBe("evomedia.net");
+    expect(render("git clone https://host/<owner>/<repo>.git")).toContain("<owner>/<repo>");
+    expect(render("documentation at docs.<site> or /help")).toContain("docs.<site>");
   });
 
   it("drops fence markers and indents the code inside", () => {

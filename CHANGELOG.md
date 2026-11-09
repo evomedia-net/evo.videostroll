@@ -16,6 +16,7 @@ and the release moves them under its version.
 
 ### Documentation
 
+- **paths:** the suite fails any document, twin included, that names a path on one workstation, while keeping the `C:/path/to` placeholder the install stanza needs ([#72](https://github.com/evomedia-net/evo.videostroll/pull/72))
 - **changelog:** the fleet format, evo.polaris's with no date on version headings; the .txt twins underline a third-level heading with ~ ([#70](https://github.com/evomedia-net/evo.videostroll/pull/70))
 
 ### Maintenance

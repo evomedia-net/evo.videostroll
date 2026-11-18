@@ -10,6 +10,7 @@ and the release moves them under its version.
 
 ### Fixed
 
+- **deps:** update the server's dependencies past 40 security advisories that had fixes, one critical (proxy-addr), all patch or minor updates inside the declared ranges ([#75](https://github.com/evomedia-net/evo.videostroll/pull/75))
 - **tts:** update msedge-tts to 2.1.0, which the Edge voice endpoint accepts again ([#64](https://github.com/evomedia-net/evo.videostroll/pull/64))
 - **recorder:** refuse the browser's own full screen so full-screen steps record whole ([#68](https://github.com/evomedia-net/evo.videostroll/pull/68))
 - **docs:** the plain-text twins keep what is inside backticks intact, drop raw HTML by element name, say a self-linking address once, and strip strikethrough markers ([#71](https://github.com/evomedia-net/evo.videostroll/pull/71))

@@ -10,6 +10,11 @@ and the release moves them under its version.
 Unreleased
 ----------
 
+Changed
+~~~~~~~
+
+- deps: server/package.json lists the install scripts npm 12 may run. npm 12, which the workstation now runs, runs a dependency's install script only if allowScripts in package.json lists it, so a local install had been skipping ffmpeg-static's, which downloads the ffmpeg binary the renderer uses; it is approved and pinned to its version. msedge-tts's is denied: its only install script is npx only-allow pnpm, its own maintainers' package-manager check, which does nothing here and would fetch an unpinned package on every install. CI installs with Node 22's own npm, which ignores the field (#76 (https://github.com/evomedia-net/evo.videostroll/pull/76))
+
 Fixed
 ~~~~~
 
